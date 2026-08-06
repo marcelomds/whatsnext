@@ -1,12 +1,12 @@
 <p align="right">
-  <a href="README.md">Português</a> | <a href="README.en.md">English</a>
+  <a href="README.pt-BR.md">Português</a> | <a href="README.md">English</a>
 </p>
 
 # WhatsApp → Claude → Google Calendar System
 
-**Sistema inteligente de agendamento via WhatsApp usando Claude AI e Google Calendar**
+**Serverless WhatsApp scheduling assistant powered by Claude AI and Google Calendar**
 
-## 🎯 Visão Geral
+## 🎯 Overview
 
 ```
 WhatsApp (Evolution API) → AWS Lambda → Claude AI → Google Calendar
@@ -14,45 +14,45 @@ WhatsApp (Evolution API) → AWS Lambda → Claude AI → Google Calendar
                               DynamoDB
 ```
 
-Mensagem em linguagem natural chega via WhatsApp, o Claude extrai título, data,
-hora e duração do evento, e o evento é criado automaticamente no Google Calendar.
-Todo o histórico de mensagens e eventos fica registrado no DynamoDB.
+A natural-language message arrives via WhatsApp, Claude extracts the event
+title, date, time and duration, and the event is created automatically on
+Google Calendar. Message and event history is persisted in DynamoDB.
 
 ## ✨ Features
 
-- ✅ Processamento de mensagens WhatsApp em tempo real (webhook)
-- ✅ IA (Claude) entendendo contexto e extraindo eventos
-- ✅ Criação automática de eventos no Google Calendar
-- ✅ Histórico de mensagens e eventos em DynamoDB
-- ✅ Testes unitários (Jest)
-- ✅ Docker pronto para deploy
-- ✅ Logging estruturado (Pino) e monitoramento (CloudWatch)
+- ✅ Real-time WhatsApp message processing (webhook)
+- ✅ AI (Claude) understanding context and extracting event data
+- ✅ Automatic Google Calendar event creation
+- ✅ Message and event history in DynamoDB
+- ✅ Unit tests (Jest)
+- ✅ Docker-ready
+- ✅ Structured logging (Pino) and monitoring (CloudWatch)
 
 ## 🚀 Quick Start
 
 ```bash
-# 1. Clone e setup
+# 1. Clone and setup
 git clone https://github.com/marcelomds/whatsnext.git
 cd whatsnext
 npm install
 
-# 2. Configure variáveis de ambiente
+# 2. Configure environment variables
 cp .env.example .env
-# Edite .env com suas credenciais
+# Edit .env with your credentials
 
-# 3. Rode testes
+# 3. Run tests
 npm test
 
-# 4. Inicie localmente (Serverless Offline)
+# 4. Start locally (Serverless Offline)
 npm run dev
 
-# 5. Deploy na AWS
+# 5. Deploy to AWS
 npm run deploy:staging
 ```
 
-Veja o passo a passo completo em [docs/SETUP.md](docs/SETUP.md).
+Full step-by-step guide: [docs/SETUP.md](docs/SETUP.md).
 
-## 📁 Estrutura do Projeto
+## 📁 Project Structure
 
 ```
 whatsnext/
@@ -62,7 +62,7 @@ whatsnext/
 │   │   │   ├── handlers/
 │   │   │   │   └── whatsapp-handler.js   (Lambda entry point)
 │   │   │   ├── services/
-│   │   │   │   ├── claude.service.js     (Integração Claude)
+│   │   │   │   ├── claude.service.js     (Claude integration)
 │   │   │   │   ├── calendar.service.js   (Google Calendar)
 │   │   │   │   ├── whatsapp.service.js   (Evolution API)
 │   │   │   │   └── dynamodb.service.js   (Database)
@@ -73,7 +73,7 @@ whatsnext/
 │   │   ├── docker/
 │   │   │   └── Dockerfile
 │   │   └── serverless.yml
-│   └── frontend/                          (em construção)
+│   └── frontend/                          (work in progress)
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── SETUP.md
@@ -84,97 +84,97 @@ whatsnext/
 
 ## 🔧 Tech Stack
 
-| Camada | Tecnologia |
-|--------|-----------|
+| Layer | Technology |
+|-------|-----------|
 | **Serverless** | AWS Lambda |
-| **Banco de Dados** | DynamoDB |
+| **Database** | DynamoDB |
 | **API** | API Gateway (REST) |
-| **IA** | Claude API (Anthropic) |
+| **AI** | Claude API (Anthropic) |
 | **Google Calendar** | Official Google Calendar API |
 | **WhatsApp** | Evolution API |
-| **Linguagem** | Node.js 18+ |
-| **Framework Lambda** | Serverless Framework |
+| **Language** | Node.js 18+ |
+| **Lambda Framework** | Serverless Framework |
 | **Testing** | Jest |
-| **Containerização** | Docker |
+| **Containerization** | Docker |
 
-## 📊 Arquitetura Completa
+## 📊 Full Architecture
 
-Veja em detalhes: [ARCHITECTURE.md](docs/ARCHITECTURE.md)
+See details in [ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
-## 🔐 Segurança
+## 🔐 Security
 
-- ✅ Variáveis de ambiente (`.env` nunca commitado — veja `.gitignore`)
-- ✅ IAM roles específicos por Lambda
-- ✅ Encriptação em trânsito (HTTPS)
+- ✅ Environment variables (`.env` never committed — see `.gitignore`)
+- ✅ Per-Lambda IAM roles
+- ✅ Encryption in transit (HTTPS)
 - ✅ Input validation
-- ✅ Error handling sem exposição de dados sensíveis
+- ✅ Error handling without exposing sensitive data
 
-## 📖 Documentação
+## 📖 Documentation
 
-- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Visão geral da arquitetura
-- **[SETUP.md](docs/SETUP.md)** - Setup completo passo a passo
-- **[PROMPTS.md](docs/PROMPTS.md)** - Prompts usados com o Claude (crítico!)
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Architecture overview
+- **[SETUP.md](docs/SETUP.md)** - Full step-by-step setup
+- **[PROMPTS.md](docs/PROMPTS.md)** - Prompts used with Claude (critical!)
 
-## 🧪 Testes
+## 🧪 Tests
 
 ```bash
-npm test               # Todos os testes
-npm run test:coverage  # Com coverage
+npm test               # All tests
+npm run test:coverage  # With coverage
 npm run test:watch     # Watch mode
 ```
 
 ## 📦 Deploy
 
 ```bash
-npm run deploy:staging   # Deploy para staging
-npm run deploy:prod      # Deploy para produção
-npm run logs:staging     # Ver logs
+npm run deploy:staging   # Deploy to staging
+npm run deploy:prod      # Deploy to production
+npm run logs:staging     # View logs
 ```
 
-## 💡 Como Funciona
+## 💡 How It Works
 
-1. **Mensagem chega no WhatsApp**
+1. **Message arrives on WhatsApp**
    ```
-   "Próxima segunda 14h, reunião com João sobre projeto X"
+   "Next Monday 2pm, meeting with John about project X"
    ```
 
-2. **Evolution API envia webhook**
+2. **Evolution API sends webhook**
    ```json
    POST /api/webhooks/whatsapp
    {
      "from": "5511999999999",
-     "message": "Próxima segunda 14h, reunião com João sobre projeto X"
+     "message": "Next Monday 2pm, meeting with John about project X"
    }
    ```
 
-3. **Lambda processa**
-   - Armazena mensagem em DynamoDB
-   - Envia para o Claude com o histórico recente
+3. **Lambda processes it**
+   - Stores the message in DynamoDB
+   - Sends it to Claude along with recent history
 
-4. **Claude extrai o evento**
-   - Título, data, hora, duração
-   - Pede esclarecimento se faltar informação
+4. **Claude extracts the event**
+   - Title, date, time, duration
+   - Asks for clarification when information is missing
 
-5. **Evento é criado**
-   - Salvo no Google Calendar
-   - Status atualizado em DynamoDB
-   - Confirmação enviada de volta ao WhatsApp
+5. **Event is created**
+   - Saved to Google Calendar
+   - Status updated in DynamoDB
+   - Confirmation sent back on WhatsApp
 
 ## 🎯 Roadmap
 
-- [x] Sistema base (Lambda + Claude + Calendar)
-- [x] DynamoDB integrado
-- [x] API REST
-- [x] Testes automatizados
+- [x] Base system (Lambda + Claude + Calendar)
+- [x] DynamoDB integration
+- [x] REST API
+- [x] Automated tests
 - [x] Docker
-- [ ] Painel Web (frontend)
-- [ ] Webhooks avançados
-- [ ] Suporte a recorrência de eventos
+- [ ] Web dashboard (frontend)
+- [ ] Advanced webhooks
+- [ ] Recurring events support
 
 ## 🐛 Troubleshooting
 
-Veja a seção de troubleshooting em [docs/SETUP.md](docs/SETUP.md#-troubleshooting).
+See the troubleshooting section in [docs/SETUP.md](docs/SETUP.md#-troubleshooting).
 
-## 📄 Licença
+## 📄 License
 
 MIT
