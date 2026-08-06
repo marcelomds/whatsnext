@@ -146,6 +146,30 @@ functions:
     timeout: 30
     memorySize: 256
   
+  # GET status da instância WhatsApp
+  getInstanceStatus:
+    handler: src/handlers/whatsapp-handler.getInstanceStatus
+    description: Retorna o estado de conexão da instância WhatsApp
+    events:
+      - http:
+          path: api/instance/status
+          method: get
+          cors: true
+    timeout: 15
+    memorySize: 256
+
+  # POST conectar instância WhatsApp (cria + retorna QR code)
+  connectInstance:
+    handler: src/handlers/whatsapp-handler.connectInstance
+    description: Cria a instância WhatsApp e retorna o QR code para pareamento
+    events:
+      - http:
+          path: api/instance/connect
+          method: post
+          cors: true
+    timeout: 30
+    memorySize: 256
+
   # Health check
   healthCheck:
     handler: src/handlers/whatsapp-handler.healthCheck

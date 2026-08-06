@@ -53,6 +53,82 @@ class WhatsAppService {
       throw new Error(`Falha ao enviar mensagem WhatsApp: ${error.message}`);
     }
   }
+
+  /**
+   * Cria a instância na Evolution API (idempotente: se já existir, ignora).
+   */
+  async createInstance() {
+    try {
+      const response = await this.client.post("/instance/create", {
+        instanceName: this.instance,
+        qrcode: true,
+        integration: "WHATSAPP-BAILEYS",
+      });
+
+      logger.info("whatsapp_instance_created", { instance: this.instance });
+      return response.data;
+    } catch (error) {
+      const alreadyExists =
+        error.response?.status === 403 || error.response?.status === 409;
+
+      if (alreadyExists) {
+        logger.debug("whatsapp_instance_already_exists", {
+          instance: this.instance,
+        });
+        return null;
+      }
+
+      logger.error("whatsapp_create_instance_error", {
+        error: error.response?.data || error.message,
+      });
+
+      throw new Error(`Falha ao criar instância WhatsApp: ${error.message}`);
+    }
+  }
+
+  /**
+   * Retorna o QR code para parear a instância (ou o estado, se já conectada).
+   */
+  async getQrCode() {
+    try {
+      const response = await this.client.get(
+        `/instance/connect/${this.instance}`
+      );
+
+      return response.data;
+    } catch (error) {
+      logger.error("whatsapp_qrcode_error", {
+        error: error.response?.data || error.message,
+      });
+
+      throw new Error(`Falha ao obter QR code: ${error.message}`);
+    }
+  }
+
+  /**
+   * Retorna o estado de conexão da instância (open, connecting, close).
+   */
+  async getConnectionState() {
+    try {
+      const response = await this.client.get(
+        `/instance/connectionState/${this.instance}`
+      );
+
+      return response.data?.instance;
+    } catch (error) {
+      const notFound = error.response?.status === 404;
+
+      if (notFound) {
+        return { instanceName: this.instance, state: "not_created" };
+      }
+
+      logger.error("whatsapp_connection_state_error", {
+        error: error.response?.data || error.message,
+      });
+
+      throw new Error(`Falha ao obter status da conexão: ${error.message}`);
+    }
+  }
 }
 
 module.exports = WhatsAppService;

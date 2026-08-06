@@ -14,6 +14,7 @@ const WhatsAppService = require("../services/whatsapp.service");
 
 const messagesController = require("../controllers/messages.controller");
 const eventsController = require("../controllers/events.controller");
+const instanceController = require("../controllers/instance.controller");
 
 // Inicializar serviços
 const claudeService = new ClaudeService();
@@ -229,6 +230,18 @@ exports.getMessages = messagesController.getMessages;
  * Retorna eventos criados
  */
 exports.getEvents = eventsController.getEvents;
+
+/**
+ * GET /api/instance/status
+ * Estado de conexão da instância WhatsApp
+ */
+exports.getInstanceStatus = instanceController.getStatus;
+
+/**
+ * POST /api/instance/connect
+ * Cria a instância (se necessário) e retorna o QR code
+ */
+exports.connectInstance = instanceController.connect;
 
 /**
  * Função auxiliar para health check
