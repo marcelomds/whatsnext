@@ -12,6 +12,9 @@ const CalendarService = require("../services/calendar.service");
 const DynamoDBService = require("../services/dynamodb.service");
 const WhatsAppService = require("../services/whatsapp.service");
 
+const messagesController = require("../controllers/messages.controller");
+const eventsController = require("../controllers/events.controller");
+
 // Inicializar serviços
 const claudeService = new ClaudeService();
 const calendarService = new CalendarService();
@@ -219,82 +222,13 @@ exports.handleWhatsappWebhook = async (event) => {
  * GET /api/messages
  * Retorna histórico de mensagens com paginação
  */
-exports.getMessages = async (event) => {
-  try {
-    const phoneNumber = event.queryStringParameters?.phoneNumber;
-    const limit = parseInt(event.queryStringParameters?.limit) || 50;
-    const offset = parseInt(event.queryStringParameters?.offset) || 0;
-
-    if (!phoneNumber) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "phoneNumber é obrigatório" }),
-      };
-    }
-
-    const messages = await dynamoDbService.getMessages(
-      phoneNumber,
-      limit,
-      offset
-    );
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        data: messages,
-        count: messages.length,
-        pagination: {
-          limit,
-          offset,
-          hasMore: messages.length === limit,
-        },
-      }),
-    };
-  } catch (error) {
-    logger.error("get_messages_error", { error: error.message });
-    return errorHandler(error);
-  }
-};
+exports.getMessages = messagesController.getMessages;
 
 /**
  * GET /api/events
  * Retorna eventos criados
  */
-exports.getEvents = async (event) => {
-  try {
-    const phoneNumber = event.queryStringParameters?.phoneNumber;
-    const status = event.queryStringParameters?.status;
-    const limit = parseInt(event.queryStringParameters?.limit) || 50;
-
-    let events;
-    if (phoneNumber) {
-      events = await dynamoDbService.getEventsByPhoneNumber(
-        phoneNumber,
-        limit
-      );
-    } else {
-      events = await dynamoDbService.getAllEvents(limit);
-    }
-
-    // Filtrar por status se fornecido
-    if (status) {
-      events = events.filter((e) => e.status === status);
-    }
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        data: events,
-        count: events.length,
-      }),
-    };
-  } catch (error) {
-    logger.error("get_events_error", { error: error.message });
-    return errorHandler(error);
-  }
-};
+exports.getEvents = eventsController.getEvents;
 
 /**
  * Função auxiliar para health check
