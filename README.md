@@ -1,38 +1,39 @@
+<p align="right">
+  <a href="README.md">Português</a> | <a href="README.en.md">English</a>
+</p>
+
 # WhatsApp → Claude → Google Calendar System
 
 **Sistema inteligente de agendamento via WhatsApp usando Claude AI e Google Calendar**
 
-> Este é um projeto **production-ready** escalável, testado e pronto para rodar na AWS com as melhores práticas de engenharia.
-
 ## 🎯 Visão Geral
 
 ```
-WhatsApp (Evolution API) → AWS Lambda → Claude AI → Google Calendar + Dashboard
+WhatsApp (Evolution API) → AWS Lambda → Claude AI → Google Calendar
                                   ↓
                               DynamoDB
-                                  ↓
-                          Painel de Acompanhamento
 ```
+
+Mensagem em linguagem natural chega via WhatsApp, o Claude extrai título, data,
+hora e duração do evento, e o evento é criado automaticamente no Google Calendar.
+Todo o histórico de mensagens e eventos fica registrado no DynamoDB.
 
 ## ✨ Features
 
-- ✅ Processamento de mensagens WhatsApp em tempo real
+- ✅ Processamento de mensagens WhatsApp em tempo real (webhook)
 - ✅ IA (Claude) entendendo contexto e extraindo eventos
 - ✅ Criação automática de eventos no Google Calendar
-- ✅ Painel Web para acompanhar mensagens e eventos
-- ✅ Histórico completo em DynamoDB
-- ✅ Testes unitários e integração
+- ✅ Histórico de mensagens e eventos em DynamoDB
+- ✅ Testes unitários (Jest)
 - ✅ Docker pronto para deploy
-- ✅ CI/CD pipelines (GitHub Actions)
-- ✅ Logging e monitoramento (CloudWatch)
-- ✅ Retry automático com exponential backoff
+- ✅ Logging estruturado (Pino) e monitoramento (CloudWatch)
 
 ## 🚀 Quick Start
 
 ```bash
 # 1. Clone e setup
-git clone seu-repo
-cd whatsapp-calendar-system
+git clone https://github.com/marcelomds/whatsnext.git
+cd whatsnext
 npm install
 
 # 2. Configure variáveis de ambiente
@@ -42,51 +43,43 @@ cp .env.example .env
 # 3. Rode testes
 npm test
 
-# 4. Inicie localmente
+# 4. Inicie localmente (Serverless Offline)
 npm run dev
 
 # 5. Deploy na AWS
-npm run deploy
+npm run deploy:staging
 ```
+
+Veja o passo a passo completo em [docs/SETUP.md](docs/SETUP.md).
 
 ## 📁 Estrutura do Projeto
 
 ```
-whatsapp-calendar-system/
-├── src/
-│   ├── handlers/
-│   │   ├── whatsapp.handler.js (Lambda entry point)
-│   │   └── webhook.handler.js
-│   ├── services/
-│   │   ├── claude.service.js (Integração Claude)
-│   │   ├── calendar.service.js (Google Calendar)
-│   │   ├── whatsapp.service.js (Evolution API)
-│   │   └── dynamodb.service.js (Database)
-│   ├── utils/
-│   │   ├── logger.js
-│   │   ├── error-handler.js
-│   │   └── validators.js
-│   ├── types/
-│   │   └── index.d.ts (TypeScript definitions)
-│   └── config/
-│       └── index.js
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   └── fixtures/
-├── docker/
-│   ├── Dockerfile
-│   └── docker-compose.yml
+whatsnext/
+├── apps/
+│   ├── backend/
+│   │   ├── src/
+│   │   │   ├── handlers/
+│   │   │   │   └── whatsapp-handler.js   (Lambda entry point)
+│   │   │   ├── services/
+│   │   │   │   ├── claude.service.js     (Integração Claude)
+│   │   │   │   ├── calendar.service.js   (Google Calendar)
+│   │   │   │   ├── whatsapp.service.js   (Evolution API)
+│   │   │   │   └── dynamodb.service.js   (Database)
+│   │   │   └── utils/
+│   │   │       ├── logger.js
+│   │   │       ├── error-handler.js
+│   │   │       └── validators.js
+│   │   ├── docker/
+│   │   │   └── Dockerfile
+│   │   └── serverless.yml
+│   └── frontend/                          (em construção)
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── SETUP.md
-│   ├── PROMPTS.md
-│   ├── API.md
-│   └── DEPLOYMENT.md
-├── serverless.yml (Config Serverless Framework)
+│   └── PROMPTS.md
 ├── package.json
-├── .env.example
-└── jest.config.js
+└── .env.example
 ```
 
 ## 🔧 Tech Stack
@@ -101,9 +94,8 @@ whatsapp-calendar-system/
 | **WhatsApp** | Evolution API |
 | **Linguagem** | Node.js 18+ |
 | **Framework Lambda** | Serverless Framework |
-| **Testing** | Jest + Supertest |
+| **Testing** | Jest |
 | **Containerização** | Docker |
-| **CI/CD** | GitHub Actions |
 
 ## 📊 Arquitetura Completa
 
@@ -111,69 +103,35 @@ Veja em detalhes: [ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 ## 🔐 Segurança
 
-- ✅ Variáveis de ambiente (nunca commitar secrets)
+- ✅ Variáveis de ambiente (`.env` nunca commitado — veja `.gitignore`)
 - ✅ IAM roles específicos por Lambda
 - ✅ Encriptação em trânsito (HTTPS)
-- ✅ DynamoDB com autenticação
-- ✅ Rate limiting
 - ✅ Input validation
 - ✅ Error handling sem exposição de dados sensíveis
 
 ## 📖 Documentação
 
-- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Visão geral arquitetura
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Visão geral da arquitetura
 - **[SETUP.md](docs/SETUP.md)** - Setup completo passo a passo
-- **[PROMPTS.md](docs/PROMPTS.md)** - Prompts para Claude (crítico!)
-- **[API.md](docs/API.md)** - Documentação dos endpoints
-- **[DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Deploy na AWS
-- **[TESTING.md](docs/TESTING.md)** - Estratégia de testes
+- **[PROMPTS.md](docs/PROMPTS.md)** - Prompts usados com o Claude (crítico!)
 
 ## 🧪 Testes
 
 ```bash
-# Rodar todos os testes
-npm test
-
-# Com coverage
-npm run test:coverage
-
-# Testes específicos
-npm run test:unit
-npm run test:integration
-
-# Watch mode
-npm run test:watch
+npm test               # Todos os testes
+npm run test:coverage  # Com coverage
+npm run test:watch     # Watch mode
 ```
 
 ## 📦 Deploy
 
 ```bash
-# Deploy para AWS (staging)
-npm run deploy:staging
-
-# Deploy para produção
-npm run deploy:prod
-
-# Ver logs
-npm run logs
-```
-
-## 🐳 Docker
-
-```bash
-# Build
-docker build -f docker/Dockerfile -t whatsapp-calendar .
-
-# Run local
-docker-compose -f docker/docker-compose.yml up
-
-# Deploy para ECR
-npm run docker:push
+npm run deploy:staging   # Deploy para staging
+npm run deploy:prod      # Deploy para produção
+npm run logs:staging     # Ver logs
 ```
 
 ## 💡 Como Funciona
-
-### Fluxo Básico
 
 1. **Mensagem chega no WhatsApp**
    ```
@@ -184,42 +142,23 @@ npm run docker:push
    ```json
    POST /api/webhooks/whatsapp
    {
-     "from": "55119999999",
+     "from": "5511999999999",
      "message": "Próxima segunda 14h, reunião com João sobre projeto X"
    }
    ```
 
 3. **Lambda processa**
-   - Armazena em DynamoDB
-   - Envia para Claude com instrução especial
+   - Armazena mensagem em DynamoDB
+   - Envia para o Claude com o histórico recente
 
-4. **Claude entende**
-   - Extrai: data, hora, título, duração
-   - Chama Google Calendar API
-   - Retorna confirmação
+4. **Claude extrai o evento**
+   - Título, data, hora, duração
+   - Pede esclarecimento se faltar informação
 
-5. **Evento criado**
-   - Salvo em Google Calendar
+5. **Evento é criado**
+   - Salvo no Google Calendar
    - Status atualizado em DynamoDB
-   - Confirmação enviada ao WhatsApp
-
-### Exemplo de Prompt para Claude
-
-```
-Você é um assistente de agendamento inteligente.
-
-Dada uma mensagem de texto, extraia as informações de evento:
-- Título do evento
-- Data e hora
-- Duração (padrão: 1 hora)
-- Descrição
-
-Formato de resposta: JSON
-
-Mensagem: "Próxima segunda 14h reunião com João"
-
-Responda com JSON estruturado e chame a função 'createCalendarEvent' com os dados.
-```
+   - Confirmação enviada de volta ao WhatsApp
 
 ## 🎯 Roadmap
 
@@ -228,32 +167,14 @@ Responda com JSON estruturado e chame a função 'createCalendarEvent' com os da
 - [x] API REST
 - [x] Testes automatizados
 - [x] Docker
-- [ ] Painel Web (React)
-- [ ] GraphQL (fase 2)
+- [ ] Painel Web (frontend)
 - [ ] Webhooks avançados
-- [ ] Machine Learning para melhor detecção
+- [ ] Suporte a recorrência de eventos
 
 ## 🐛 Troubleshooting
 
-### Lambda não conecta em Google Calendar
-→ Verificar credenciais e permissões IAM
-
-### Mensagem não chega
-→ Verificar logs em CloudWatch: `npm run logs`
-
-### Testes falhando
-→ Rodar `npm install` e verificar .env
-
-Veja mais em [DEPLOYMENT.md](docs/DEPLOYMENT.md)
-
-## 📞 Suporte
-
-Para issues ou dúvidas, abra uma issue no repositório.
+Veja a seção de troubleshooting em [docs/SETUP.md](docs/SETUP.md#-troubleshooting).
 
 ## 📄 Licença
 
 MIT
-
----
-
-**Desenvolvido para escala e produção** 🚀
