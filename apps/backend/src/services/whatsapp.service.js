@@ -7,11 +7,13 @@ const axios = require("axios");
 const logger = require("../utils/logger");
 
 class WhatsAppService {
-  constructor() {
+  constructor(instanceName) {
     this.baseUrl = process.env.EVOLUTION_API_URL;
     this.apiKey = process.env.EVOLUTION_API_KEY;
     this.instance =
-      process.env.EVOLUTION_INSTANCE || process.env.EVOLUTION_PHONE_NUMBER;
+      instanceName ||
+      process.env.EVOLUTION_INSTANCE ||
+      process.env.EVOLUTION_PHONE_NUMBER;
 
     this.client = axios.create({
       baseURL: this.baseUrl,

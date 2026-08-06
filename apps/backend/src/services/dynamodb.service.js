@@ -39,6 +39,79 @@ class DynamoDBService {
     this.messagesTable = process.env.DYNAMODB_MESSAGES_TABLE || "messages";
     this.eventsTable = process.env.DYNAMODB_EVENTS_TABLE || "events";
     this.auditLogsTable = process.env.DYNAMODB_AUDIT_LOGS_TABLE || "audit_logs";
+    this.usersTable = process.env.DYNAMODB_USERS_TABLE || "users";
+  }
+
+  /**
+   * Criar usuário
+   */
+  async createUser(user) {
+    try {
+      const record = {
+        userId: user.userId,
+        email: user.email,
+        name: user.name,
+        passwordHash: user.passwordHash,
+        evolutionInstance: user.evolutionInstance,
+        createdAt: Date.now(),
+      };
+
+      await this.dynamodb.send(
+        new PutCommand({
+          TableName: this.usersTable,
+          Item: record,
+          ConditionExpression: "attribute_not_exists(userId)",
+        })
+      );
+
+      logger.debug("user_created", { userId: user.userId, email: user.email });
+
+      return record;
+    } catch (error) {
+      logger.error("create_user_error", { error: error.message, email: user.email });
+      throw error;
+    }
+  }
+
+  /**
+   * Buscar usuário por e-mail
+   */
+  async getUserByEmail(email) {
+    try {
+      const response = await this.dynamodb.send(
+        new QueryCommand({
+          TableName: this.usersTable,
+          IndexName: "email-index",
+          KeyConditionExpression: "email = :email",
+          ExpressionAttributeValues: { ":email": email },
+          Limit: 1,
+        })
+      );
+
+      return response.Items?.[0] || null;
+    } catch (error) {
+      logger.error("get_user_by_email_error", { error: error.message, email });
+      throw error;
+    }
+  }
+
+  /**
+   * Buscar usuário por ID
+   */
+  async getUserById(userId) {
+    try {
+      const response = await this.dynamodb.send(
+        new GetCommand({
+          TableName: this.usersTable,
+          Key: { userId },
+        })
+      );
+
+      return response.Item || null;
+    } catch (error) {
+      logger.error("get_user_by_id_error", { error: error.message, userId });
+      throw error;
+    }
   }
 
   /**

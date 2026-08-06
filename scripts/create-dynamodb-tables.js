@@ -83,6 +83,24 @@ const tables = [
     BillingMode: "PROVISIONED",
     ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 },
   },
+  {
+    TableName: process.env.DYNAMODB_USERS_TABLE || "users",
+    AttributeDefinitions: [
+      { AttributeName: "userId", AttributeType: "S" },
+      { AttributeName: "email", AttributeType: "S" },
+    ],
+    KeySchema: [{ AttributeName: "userId", KeyType: "HASH" }],
+    GlobalSecondaryIndexes: [
+      {
+        IndexName: "email-index",
+        KeySchema: [{ AttributeName: "email", KeyType: "HASH" }],
+        Projection: { ProjectionType: "ALL" },
+        ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 },
+      },
+    ],
+    BillingMode: "PROVISIONED",
+    ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 },
+  },
 ];
 
 async function main() {

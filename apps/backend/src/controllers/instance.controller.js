@@ -1,20 +1,19 @@
 /**
  * Instance Controller
- * Gerenciamento da instância WhatsApp (Evolution API) — conexão single-user
+ * Gerenciamento da instância WhatsApp (Evolution API) do usuário autenticado
  */
 
 const logger = require("../utils/logger");
 const { errorHandler } = require("../utils/error-handler");
 const WhatsAppService = require("../services/whatsapp.service");
 
-const whatsappService = new WhatsAppService();
-
 /**
  * GET /api/instance/status
- * Retorna o estado de conexão da instância
+ * Retorna o estado de conexão da instância do usuário logado
  */
 exports.getStatus = async (event) => {
   try {
+    const whatsappService = new WhatsAppService(event.authUser.evolutionInstance);
     const state = await whatsappService.getConnectionState();
 
     return {
@@ -34,6 +33,7 @@ exports.getStatus = async (event) => {
  */
 exports.connect = async (event) => {
   try {
+    const whatsappService = new WhatsAppService(event.authUser.evolutionInstance);
     await whatsappService.createInstance();
     const data = await whatsappService.getQrCode();
 
