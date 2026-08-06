@@ -1,0 +1,274 @@
+service: whatsnext-system
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${env:AWS_REGION, 'us-east-1'}
+  stage: ${env:STAGE, 'dev'}
+  
+  # Memória e timeout
+  memorySize: 512
+  timeout: 60
+  
+  # IAM Role
+  iam:
+    role:
+      statements:
+        # DynamoDB
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:UpdateItem
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:BatchGetItem
+            - dynamodb:BatchWriteItem
+          Resource:
+            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/messages
+            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/messages/index/*
+            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/events
+            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/events/index/*
+            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/audit_logs
+        
+        # Secrets Manager
+        - Effect: Allow
+          Action:
+            - secretsmanager:GetSecretValue
+          Resource:
+            - arn:aws:secretsmanager:${aws:region}:${self:custom.accountId}:secret:whatsapp-calendar/*
+        
+        # CloudWatch Logs
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: arn:aws:logs:${aws:region}:${self:custom.accountId}:log-group:/aws/lambda/*
+        
+        # CloudWatch Metrics
+        - Effect: Allow
+          Action:
+            - cloudwatch:PutMetricData
+          Resource: "*"
+        
+        # X-Ray (para tracing)
+        - Effect: Allow
+          Action:
+            - xray:PutTraceSegments
+            - xray:PutTelemetryRecords
+          Resource: "*"
+  
+  # Variáveis de ambiente
+  environment:
+    DYNAMODB_MESSAGES_TABLE: ${self:service}-messages-${sls:stage}
+    DYNAMODB_EVENTS_TABLE: ${self:service}-events-${sls:stage}
+    DYNAMODB_AUDIT_LOGS_TABLE: ${self:service}-audit-logs-${sls:stage}
+    CLAUDE_API_KEY: ${env:CLAUDE_API_KEY}
+    GOOGLE_CALENDAR_CLIENT_ID: ${env:GOOGLE_CALENDAR_CLIENT_ID}
+    GOOGLE_CALENDAR_CLIENT_SECRET: ${env:GOOGLE_CALENDAR_CLIENT_SECRET}
+    GOOGLE_CALENDAR_REFRESH_TOKEN: ${env:GOOGLE_CALENDAR_REFRESH_TOKEN}
+    EVOLUTION_API_URL: ${env:EVOLUTION_API_URL}
+    EVOLUTION_API_KEY: ${env:EVOLUTION_API_KEY}
+    LOG_LEVEL: ${env:LOG_LEVEL, 'info'}
+    TIMEZONE: ${env:TIMEZONE, 'America/Sao_Paulo'}
+  
+  # API Gateway
+  apiGateway:
+    metrics: true
+    shouldStartNameWithService: true
+  
+  # X-Ray tracing
+  tracing:
+    lambda: true
+    apiGateway: true
+  
+  # Logs
+  logs:
+    restApi: true
+
+functions:
+  # Handler principal - Webhook WhatsApp
+  handleWhatsappWebhook:
+    handler: src/handlers/whatsapp-handler.handleWhatsappWebhook
+    description: Processa webhooks do WhatsApp
+    events:
+      - http:
+          path: api/webhooks/whatsapp
+          method: post
+          cors: true
+          authorizer:
+            type: TOKEN
+            identitySource: method.request.header.Authorization
+            authorizerUri: arn:aws:apigateway:${aws:region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${aws:region}:${self:custom.accountId}:function:${self:service}-${sls:stage}-authorizer/invocations
+            authorizerCredentials: arn:aws:iam::${self:custom.accountId}:role/lambda-invoke-role
+    timeout: 60
+    memorySize: 512
+    environment:
+      LOG_LEVEL: ${env:LOG_LEVEL, 'info'}
+  
+  # GET mensagens
+  getMessages:
+    handler: src/handlers/whatsapp-handler.getMessages
+    description: Retorna histórico de mensagens
+    events:
+      - http:
+          path: api/messages
+          method: get
+          cors: true
+          parameters:
+            querystrings:
+              phoneNumber: true
+              limit: false
+              offset: false
+    timeout: 30
+    memorySize: 256
+  
+  # GET eventos
+  getEvents:
+    handler: src/handlers/whatsapp-handler.getEvents
+    description: Retorna eventos criados
+    events:
+      - http:
+          path: api/events
+          method: get
+          cors: true
+          parameters:
+            querystrings:
+              phoneNumber: false
+              status: false
+              limit: false
+    timeout: 30
+    memorySize: 256
+  
+  # Health check
+  healthCheck:
+    handler: src/handlers/whatsapp-handler.healthCheck
+    description: Verifica saúde da aplicação
+    events:
+      - http:
+          path: health
+          method: get
+          cors: true
+    timeout: 10
+    memorySize: 128
+
+# Plugins
+plugins:
+  - serverless-offline
+  - serverless-plugin-tracing
+
+# Configuração offline
+custom:
+  accountId: ${env:AWS_ACCOUNT_ID, '000000000000'}
+
+  serverless-offline:
+    httpPort: 3000
+    websocketPort: 3001
+    lambdaPort: 3002
+    useWorkerThreads: true
+
+# Resources (DynamoDB Tables)
+resources:
+  Resources:
+    # Tabela: messages
+    MessagesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_MESSAGES_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: messageId
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: N
+          - AttributeName: phoneNumber
+            AttributeType: S
+        KeySchema:
+          - AttributeName: messageId
+            KeyType: HASH
+          - AttributeName: timestamp
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: phoneNumber-timestamp-index
+            KeySchema:
+              - AttributeName: phoneNumber
+                KeyType: HASH
+              - AttributeName: timestamp
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        TimeToLiveSpecification:
+          Enabled: true
+          AttributeName: ttl
+    
+    # Tabela: events
+    EventsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_EVENTS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: eventId
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: N
+          - AttributeName: phoneNumber
+            AttributeType: S
+        KeySchema:
+          - AttributeName: eventId
+            KeyType: HASH
+          - AttributeName: timestamp
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: phoneNumber-timestamp-index
+            KeySchema:
+              - AttributeName: phoneNumber
+                KeyType: HASH
+              - AttributeName: timestamp
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+    
+    # Tabela: audit_logs
+    AuditLogsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_AUDIT_LOGS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: logId
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: N
+        KeySchema:
+          - AttributeName: logId
+            KeyType: HASH
+          - AttributeName: timestamp
+            KeyType: RANGE
+        TimeToLiveSpecification:
+          Enabled: true
+          AttributeName: ttl
+
+# Outputs
+outputs:
+  ApiEndpoint:
+    Value:
+      Fn::Sub: "https://${ApiGatewayRestApi}.execute-api.${AWS::Region}.amazonaws.com/${sls:stage}"
+    Description: API Gateway endpoint
+  
+  MessagesTable:
+    Value:
+      Ref: MessagesTable
+    Description: Messages table name
+  
+  EventsTable:
+    Value:
+      Ref: EventsTable
+    Description: Events table name

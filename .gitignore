@@ -1,0 +1,25 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+
+# Build / test output
+dist/
+build/
+coverage/
+.nyc_output/
+
+# Serverless
+.serverless/
+.dynamodb/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

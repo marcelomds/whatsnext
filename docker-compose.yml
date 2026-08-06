@@ -1,0 +1,114 @@
+version: "3.9"
+
+services:
+  # DynamoDB Local para desenvolvimento
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    container_name: whatsnext-dynamodb
+    ports:
+      - "8000:8000"
+    command: -jar DynamoDBLocal.jar -sharedDb -inMemory
+    environment:
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -s
+        - -o
+        - /dev/null
+        - http://localhost:8000/
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - dynamodb-local-data:/data
+    networks:
+      - whatsnext-network
+
+  # Aplicação principal
+  whatsnext-api:
+    build:
+      context: .
+      dockerfile: apps/backend/docker/Dockerfile
+    container_name: whatsnext-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
+      - DYNAMODB_MESSAGES_TABLE=messages
+      - DYNAMODB_EVENTS_TABLE=events
+      - DYNAMODB_AUDIT_LOGS_TABLE=audit_logs
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
+      - GOOGLE_CALENDAR_CLIENT_ID=${GOOGLE_CALENDAR_CLIENT_ID}
+      - GOOGLE_CALENDAR_CLIENT_SECRET=${GOOGLE_CALENDAR_CLIENT_SECRET}
+      - GOOGLE_CALENDAR_REFRESH_TOKEN=${GOOGLE_CALENDAR_REFRESH_TOKEN}
+      - EVOLUTION_API_URL=${EVOLUTION_API_URL}
+      - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
+      - LOG_LEVEL=debug
+    depends_on:
+      dynamodb-local:
+        condition: service_healthy
+    volumes:
+      - ./apps/backend/src:/app/src
+      - ./docs:/app/docs
+      - /app/node_modules
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -f
+        - http://localhost:3000/health
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - whatsnext-network
+    restart: unless-stopped
+
+  # LocalStack para testes (opcional)
+  # Descomente para usar AWS services locais adicionais
+  # localstack:
+  #   image: localstack/localstack:latest
+  #   container_name: whatsnext-localstack
+  #   ports:
+  #     - "4566:4566"
+  #   environment:
+  #     - SERVICES=lambda,apigateway,cloudwatch,logs,secretsmanager
+  #     - DEBUG=1
+  #     - DATA_DIR=/tmp/localstack/data
+  #   volumes:
+  #     - "${TMPDIR:-.}:/tmp/localstack"
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   networks:
+  #     - whatsnext-network
+
+  # Adminer para visualizar DynamoDB (opcional)
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin:latest
+    container_name: whatsnext-admin
+    ports:
+      - "8001:8001"
+    environment:
+      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+    depends_on:
+      - dynamodb-local
+    networks:
+      - whatsnext-network
+
+volumes:
+  dynamodb-local-data:
+    driver: local
+
+networks:
+  whatsnext-network:
+    driver: bridge
