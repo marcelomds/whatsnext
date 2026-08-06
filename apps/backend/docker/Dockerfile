@@ -42,14 +42,16 @@ USER nodejs
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+    CMD node -e "require('http').get('http://localhost:3000/dev/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
 
 # Usar dumb-init para gerenciar processos
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start comando para desenvolvimento
 # Para produção, usar serverless framework
-CMD ["npm", "run", "dev"]
+# (não usa "npm run dev": esse script faz cd apps/backend, mas aqui o código
+# já foi copiado achatado direto em /app/src)
+CMD ["npx", "serverless", "offline", "start", "--stage", "dev"]
 
 # Metadados
 LABEL maintainer="Seu Nome"

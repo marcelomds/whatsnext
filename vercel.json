@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "api/webhooks/whatsapp.js": {
+      "maxDuration": 60
+    },
+    "api/instance/connect.js": {
+      "maxDuration": 30
+    },
+    "api/**/*.js": {
+      "maxDuration": 15
+    }
+  }
+}
