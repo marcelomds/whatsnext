@@ -4,6 +4,8 @@
 
 # WhatsApp → Claude → Google Calendar System
 
+[![CI](https://github.com/marcelomds/whatsnext/actions/workflows/ci.yml/badge.svg)](https://github.com/marcelomds/whatsnext/actions/workflows/ci.yml)
+
 **Sistema inteligente de agendamento via WhatsApp usando Claude AI e Google Calendar**
 
 ## 🎯 Visão Geral

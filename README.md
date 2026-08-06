@@ -4,6 +4,8 @@
 
 # WhatsApp → Claude → Google Calendar System
 
+[![CI](https://github.com/marcelomds/whatsnext/actions/workflows/ci.yml/badge.svg)](https://github.com/marcelomds/whatsnext/actions/workflows/ci.yml)
+
 **Serverless WhatsApp scheduling assistant powered by Claude AI and Google Calendar**
 
 ## 🎯 Overview
