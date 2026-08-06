@@ -15,7 +15,7 @@ class ClaudeService {
 
     // Cache para respostas (30 minutos)
     this.cache = new Cache({ stdTTL: 1800 });
-    this.model = process.env.CLAUDE_MODEL || "claude-opus-4.8";
+    this.model = process.env.CLAUDE_MODEL || "claude-opus-4-8";
     this.temperature = parseFloat(process.env.CLAUDE_TEMPERATURE) || 0.3;
     this.maxTokens = parseInt(process.env.CLAUDE_MAX_TOKENS) || 1024;
   }
@@ -98,7 +98,6 @@ Responda APENAS com JSON válido, sem markdown ou pré-ambuloradores.`;
       const response = await this.client.messages.create({
         model: this.model,
         max_tokens: this.maxTokens,
-        temperature: this.temperature,
         system: this.getSystemPrompt(historyContext),
         messages: [
           {
@@ -146,7 +145,6 @@ Responda APENAS com JSON válido, sem markdown ou pré-ambuloradores.`;
       const response = await this.client.messages.create({
         model: this.model,
         max_tokens: this.maxTokens,
-        temperature: this.temperature,
         system: this.getSystemPrompt(historyContext),
         tools: [
           {

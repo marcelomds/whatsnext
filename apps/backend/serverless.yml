@@ -63,15 +63,18 @@ provider:
   
   # Variáveis de ambiente
   environment:
-    DYNAMODB_MESSAGES_TABLE: ${self:service}-messages-${sls:stage}
-    DYNAMODB_EVENTS_TABLE: ${self:service}-events-${sls:stage}
-    DYNAMODB_AUDIT_LOGS_TABLE: ${self:service}-audit-logs-${sls:stage}
+    DYNAMODB_MESSAGES_TABLE: ${env:DYNAMODB_MESSAGES_TABLE, '${self:service}-messages-${sls:stage}'}
+    DYNAMODB_EVENTS_TABLE: ${env:DYNAMODB_EVENTS_TABLE, '${self:service}-events-${sls:stage}'}
+    DYNAMODB_AUDIT_LOGS_TABLE: ${env:DYNAMODB_AUDIT_LOGS_TABLE, '${self:service}-audit-logs-${sls:stage}'}
+    DYNAMODB_ENDPOINT: ${env:DYNAMODB_ENDPOINT, ''}
+    AWS_REGION: ${env:AWS_REGION, 'us-east-1'}
     CLAUDE_API_KEY: ${env:CLAUDE_API_KEY}
     GOOGLE_CALENDAR_CLIENT_ID: ${env:GOOGLE_CALENDAR_CLIENT_ID}
     GOOGLE_CALENDAR_CLIENT_SECRET: ${env:GOOGLE_CALENDAR_CLIENT_SECRET}
     GOOGLE_CALENDAR_REFRESH_TOKEN: ${env:GOOGLE_CALENDAR_REFRESH_TOKEN}
     EVOLUTION_API_URL: ${env:EVOLUTION_API_URL}
     EVOLUTION_API_KEY: ${env:EVOLUTION_API_KEY}
+    EVOLUTION_INSTANCE: ${env:EVOLUTION_INSTANCE, ''}
     LOG_LEVEL: ${env:LOG_LEVEL, 'info'}
     TIMEZONE: ${env:TIMEZONE, 'America/Sao_Paulo'}
   

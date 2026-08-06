@@ -224,7 +224,7 @@ ${conversationHistory.map((msg) => `${msg.role}: ${msg.content}`).join("\n")}`
     const systemPrompt = this.getSystemPrompt(conversationHistory);
 
     const response = await this.client.messages.create({
-      model: "claude-opus-4.8",
+      model: "claude-opus-4-8",
       max_tokens: 1024,
       system: systemPrompt,
       messages: [
@@ -251,7 +251,7 @@ ${conversationHistory.map((msg) => `${msg.role}: ${msg.content}`).join("\n")}`
   // Com tool use (function calling)
   async extractEventWithTools(userMessage) {
     const response = await this.client.messages.create({
-      model: "claude-opus-4.8",
+      model: "claude-opus-4-8",
       max_tokens: 1024,
       system: this.getSystemPrompt(),
       tools: [
@@ -358,7 +358,7 @@ max_tokens: 2048
 
 ```javascript
 // Recomendado para produção (mais rápido e barato):
-model: "claude-opus-4.8"
+model: "claude-opus-4-8"
 
 // Se precisar de respostas ultra-precisas:
 model: "claude-sonnet-4-6"
@@ -372,7 +372,7 @@ curl -X POST https://api.anthropic.com/v1/messages \
   -H "x-api-key: $CLAUDE_API_KEY" \
   -H "content-type: application/json" \
   -d '{
-    "model": "claude-opus-4.8",
+    "model": "claude-opus-4-8",
     "max_tokens": 1024,
     "system": "Seu system prompt aqui",
     "messages": [{"role": "user", "content": "Sua mensagem teste"}]
@@ -422,7 +422,7 @@ const startTime = new Date("2024-01-15T14:00:00-03:00").toISOString();
 ## ✅ Checklist de Implementação
 
 - [ ] System prompt principal configurado em claude.service.js
-- [ ] Modelo Claude definido como claude-opus-4.8
+- [ ] Modelo Claude definido como claude-opus-4-8
 - [ ] Temperature ajustado para 0.3
 - [ ] Tool use implementado corretamente
 - [ ] Tratamento de erros implementado

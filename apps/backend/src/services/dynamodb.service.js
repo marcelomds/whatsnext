@@ -18,6 +18,13 @@ class DynamoDBService {
   constructor() {
     const client = new DynamoDBClient({
       region: process.env.AWS_REGION || "us-east-1",
+      ...(process.env.DYNAMODB_ENDPOINT && {
+        endpoint: process.env.DYNAMODB_ENDPOINT,
+        credentials: {
+          accessKeyId: "local",
+          secretAccessKey: "local",
+        },
+      }),
     });
 
     // Usar Document Client para abstração automática
