@@ -174,6 +174,18 @@ functions:
     timeout: 30
     memorySize: 256
 
+  # POST desconectar instância WhatsApp
+  disconnectInstance:
+    handler: src/handlers/whatsapp-handler.disconnectInstance
+    description: Desconecta a instância WhatsApp do usuário
+    events:
+      - http:
+          path: api/instance/disconnect
+          method: post
+          cors: true
+    timeout: 15
+    memorySize: 256
+
   # POST registrar usuário
   register:
     handler: src/handlers/whatsapp-handler.register

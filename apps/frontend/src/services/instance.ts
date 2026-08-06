@@ -13,3 +13,7 @@ export function getInstanceStatus() {
 export function connectInstance() {
   return apiPost<ApiEnvelope<ConnectResponse>>("/api/instance/connect");
 }
+
+export function disconnectInstance() {
+  return apiPost<ApiEnvelope<null>>("/api/instance/disconnect");
+}

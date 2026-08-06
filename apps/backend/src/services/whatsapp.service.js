@@ -131,6 +131,28 @@ class WhatsAppService {
       throw new Error(`Falha ao obter status da conexão: ${error.message}`);
     }
   }
+
+  /**
+   * Desconecta a instância (logout). O registro da instância continua
+   * existindo na Evolution API; um novo QR code pode ser gerado depois.
+   */
+  async disconnectInstance() {
+    try {
+      const response = await this.client.delete(
+        `/instance/logout/${this.instance}`
+      );
+
+      logger.info("whatsapp_instance_disconnected", { instance: this.instance });
+
+      return response.data;
+    } catch (error) {
+      logger.error("whatsapp_disconnect_error", {
+        error: error.response?.data || error.message,
+      });
+
+      throw new Error(`Falha ao desconectar instância: ${error.message}`);
+    }
+  }
 }
 
 module.exports = WhatsAppService;

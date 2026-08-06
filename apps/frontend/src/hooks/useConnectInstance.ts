@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { connectInstance } from "../services/instance";
+import { connectInstance, disconnectInstance } from "../services/instance";
 import { useInstanceStatus } from "./useInstanceStatus";
 
 function extractQrCode(data: { base64?: string; qrcode?: { base64: string } }) {
@@ -10,6 +10,7 @@ export function useConnectInstance() {
   const { status, loading, error: statusError, refresh } = useInstanceStatus();
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -47,12 +48,28 @@ export function useConnectInstance() {
     }
   };
 
+  const disconnect = async () => {
+    setError(null);
+    setDisconnecting(true);
+
+    try {
+      await disconnectInstance();
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
   return {
     status,
     loading,
     connecting,
+    disconnecting,
     qrCode,
     error: error || statusError,
     startConnect,
+    disconnect,
   };
 }

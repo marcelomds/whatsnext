@@ -46,3 +46,22 @@ exports.connect = async (event) => {
     return errorHandler(error);
   }
 };
+
+/**
+ * POST /api/instance/disconnect
+ * Desconecta a instância do usuário logado (logout)
+ */
+exports.disconnect = async (event) => {
+  try {
+    const whatsappService = new WhatsAppService(event.authUser.evolutionInstance);
+    await whatsappService.disconnectInstance();
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ success: true }),
+    };
+  } catch (error) {
+    logger.error("disconnect_instance_error", { error: error.message });
+    return errorHandler(error);
+  }
+};

@@ -246,6 +246,12 @@ exports.getInstanceStatus = withAuth(instanceController.getStatus);
 exports.connectInstance = withAuth(instanceController.connect);
 
 /**
+ * POST /api/instance/disconnect
+ * Desconecta a instância do usuário logado
+ */
+exports.disconnectInstance = withAuth(instanceController.disconnect);
+
+/**
  * POST /api/auth/register
  */
 exports.register = authController.register;
