@@ -213,8 +213,6 @@ cd apps/frontend && npm run build   # frontend type-check + build
 - [x] Self-only authorization (`AUTHORIZED_PHONE_NUMBER`) + silent handling of unrelated messages
 - [x] EN/PT web panel with calendar view + next-event highlight
 - [ ] Audio message transcription
-- [ ] Group chat support
-- [ ] Recurring events
 
 ## 🐛 Troubleshooting
 
