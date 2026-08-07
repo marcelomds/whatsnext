@@ -27,13 +27,13 @@ provider:
             - dynamodb:BatchGetItem
             - dynamodb:BatchWriteItem
           Resource:
-            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/messages
-            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/messages/index/*
-            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/events
-            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/events/index/*
-            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/audit_logs
-            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/users
-            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/users/index/*
+            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/${self:provider.environment.DYNAMODB_MESSAGES_TABLE}
+            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/${self:provider.environment.DYNAMODB_MESSAGES_TABLE}/index/*
+            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/${self:provider.environment.DYNAMODB_EVENTS_TABLE}
+            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/${self:provider.environment.DYNAMODB_EVENTS_TABLE}/index/*
+            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/${self:provider.environment.DYNAMODB_AUDIT_LOGS_TABLE}
+            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/${self:provider.environment.DYNAMODB_USERS_TABLE}
+            - arn:aws:dynamodb:${aws:region}:${self:custom.accountId}:table/${self:provider.environment.DYNAMODB_USERS_TABLE}/index/*
 
         # Secrets Manager
         - Effect: Allow
@@ -71,7 +71,6 @@ provider:
     DYNAMODB_USERS_TABLE: ${env:DYNAMODB_USERS_TABLE, '${self:service}-users-${sls:stage}'}
     DYNAMODB_ENDPOINT: ${env:DYNAMODB_ENDPOINT, ''}
     JWT_SECRET: ${env:JWT_SECRET}
-    AWS_REGION: ${env:AWS_REGION, 'us-east-1'}
     CLAUDE_API_KEY: ${env:CLAUDE_API_KEY}
     GOOGLE_CALENDAR_CLIENT_ID: ${env:GOOGLE_CALENDAR_CLIENT_ID}
     GOOGLE_CALENDAR_CLIENT_SECRET: ${env:GOOGLE_CALENDAR_CLIENT_SECRET}
@@ -92,9 +91,6 @@ provider:
     lambda: true
     apiGateway: true
   
-  # Logs
-  logs:
-    restApi: true
 
 functions:
   # Handler principal - Webhook WhatsApp
@@ -106,11 +102,6 @@ functions:
           path: api/webhooks/whatsapp
           method: post
           cors: true
-          authorizer:
-            type: TOKEN
-            identitySource: method.request.header.Authorization
-            authorizerUri: arn:aws:apigateway:${aws:region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${aws:region}:${self:custom.accountId}:function:${self:service}-${sls:stage}-authorizer/invocations
-            authorizerCredentials: arn:aws:iam::${self:custom.accountId}:role/lambda-invoke-role
     timeout: 60
     memorySize: 512
     environment:
