@@ -6,6 +6,7 @@
 const logger = require("../utils/logger");
 const { errorHandler } = require("../utils/error-handler");
 const { validateMessage } = require("../utils/validators");
+const { parseEvolutionWebhook } = require("../utils/evolution-payload");
 
 const ClaudeService = require("../services/claude.service");
 const CalendarService = require("../services/calendar.service");
@@ -40,7 +41,20 @@ exports.handleWhatsappWebhook = async (event) => {
     });
 
     // 1. Parse e validação
-    const body = JSON.parse(event.body || "{}");
+    const rawBody = JSON.parse(event.body || "{}");
+
+    // Aceita tanto o payload real da Evolution API ({event, instance, data})
+    // quanto o formato simples {from, message, timestamp} usado em testes manuais.
+    const body = rawBody.data ? parseEvolutionWebhook(rawBody) : rawBody;
+
+    if (!body) {
+      logger.debug("webhook_ignored", { correlationId });
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ success: true, status: "ignored" }),
+      };
+    }
+
     const validation = validateMessage(body);
 
     if (!validation.isValid) {
