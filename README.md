@@ -68,22 +68,28 @@ whatsnext/
 │   │   │   ├── handlers/
 │   │   │   │   └── whatsapp-handler.js      (Lambda entry points)
 │   │   │   ├── controllers/
-│   │   │   │   ├── auth.controller.js       (register/login/me)
-│   │   │   │   ├── instance.controller.js   (connect/status/disconnect)
-│   │   │   │   ├── messages.controller.js
-│   │   │   │   └── events.controller.js
+│   │   │   │   ├── auth.controller.ts       (register/login/me)
+│   │   │   │   ├── instance.controller.ts   (connect/status/disconnect)
+│   │   │   │   ├── messages.controller.ts
+│   │   │   │   └── events.controller.ts
 │   │   │   ├── services/
-│   │   │   │   ├── claude.service.js        (Claude integration)
-│   │   │   │   ├── calendar.service.js      (Google Calendar)
-│   │   │   │   ├── whatsapp.service.js      (Evolution API)
-│   │   │   │   ├── dynamodb.service.js      (Database)
-│   │   │   │   └── auth.service.js          (JWT + bcrypt)
+│   │   │   │   ├── claude.service.ts        (Claude integration)
+│   │   │   │   ├── calendar.service.ts      (Google Calendar)
+│   │   │   │   ├── whatsapp.service.ts      (Evolution API)
+│   │   │   │   ├── dynamodb.service.ts      (Database)
+│   │   │   │   ├── auth.service.ts          (JWT + bcrypt)
+│   │   │   │   └── transcription.service.ts (OpenAI Whisper)
+│   │   │   ├── types/
+│   │   │   │   └── domain.ts
 │   │   │   └── utils/
-│   │   │       ├── with-auth.js             (JWT guard for Lambda handlers)
-│   │   │       ├── evolution-payload.js     (parses the real webhook shape)
-│   │   │       ├── logger.js
-│   │   │       ├── error-handler.js
-│   │   │       └── validators.js
+│   │   │       ├── with-auth.ts             (JWT guard for Lambda handlers)
+│   │   │       ├── with-cors.ts             (CORS headers wrapper)
+│   │   │       ├── evolution-payload.ts     (parses the real webhook shape)
+│   │   │       ├── sent-message-cache.ts
+│   │   │       ├── vercel-adapter.ts
+│   │   │       ├── logger.ts
+│   │   │       ├── error-handler.ts
+│   │   │       └── validators.ts
 │   │   ├── package.json                     (backend's own runtime deps — deploy stays small)
 │   │   ├── docker/Dockerfile
 │   │   └── serverless.yml
@@ -195,6 +201,21 @@ aws cloudfront create-invalidation --distribution-id <your-distribution-id> --pa
 The S3 bucket + CloudFront distribution + Origin Access Control are one-time
 setup (bucket policy scoped to the CloudFront distribution's ARN); they aren't
 recreated on every deploy, only the sync + invalidation above.
+
+## 🔄 CI/CD
+
+GitHub Actions (`.github/workflows/ci.yml`) runs the full pipeline on every push:
+
+- **CI** — backend tests (Jest) + frontend tests and build, on every push and PR.
+- **CD** — on push to `main`, once CI passes: `deploy-backend` runs `serverless deploy --stage prod`, then `deploy-frontend` builds with the prod API URL, syncs to S3, and invalidates CloudFront. The manual commands above still work for one-off deploys, but pushing to `main` is now enough on its own.
+
+Required repo secrets (**Settings → Secrets and variables → Actions**) — same values as your `.env.production`:
+
+| Secret | Used by |
+|--------|---------|
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_ACCOUNT_ID` | both deploy jobs |
+| `JWT_SECRET`, `CLAUDE_API_KEY`, `GOOGLE_CALENDAR_CLIENT_ID`, `GOOGLE_CALENDAR_CLIENT_SECRET`, `GOOGLE_CALENDAR_REFRESH_TOKEN`, `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE`, `AUTHORIZED_PHONE_NUMBER`, `OPENAI_API_KEY` | `deploy-backend` |
+| `VITE_API_URL_PROD`, `S3_BUCKET_NAME`, `CLOUDFRONT_DISTRIBUTION_ID` | `deploy-frontend` |
 
 ## 🧪 Tests
 
