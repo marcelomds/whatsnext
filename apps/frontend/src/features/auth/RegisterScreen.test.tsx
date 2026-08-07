@@ -2,9 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useAuth } from "../../hooks/useAuth";
+import { useLanguage } from "../../hooks/useLanguage";
+import { translations } from "../../i18n/translations";
 import { RegisterScreen } from "./RegisterScreen";
 
 vi.mock("../../hooks/useAuth", () => ({ useAuth: vi.fn() }));
+vi.mock("../../hooks/useLanguage", () => ({ useLanguage: vi.fn() }));
 
 describe("RegisterScreen", () => {
   const register = vi.fn();
@@ -17,6 +20,11 @@ describe("RegisterScreen", () => {
       login: vi.fn(),
       register,
       logout: vi.fn(),
+    });
+    vi.mocked(useLanguage).mockReturnValue({
+      language: "pt",
+      setLanguage: vi.fn(),
+      t: (key) => translations.pt[key],
     });
   });
 

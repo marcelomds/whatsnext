@@ -3,6 +3,7 @@
  */
 
 const { parseEvolutionWebhook } = require("./evolution-payload");
+const sentMessageCache = require("./sent-message-cache");
 
 function buildPayload({ data: dataOverrides, ...topOverrides } = {}) {
   return {
@@ -55,8 +56,23 @@ describe("parseEvolutionWebhook", () => {
     expect(parseEvolutionWebhook(payload).message).toBe("Marca isso pra sexta");
   });
 
-  it("ignora mensagens enviadas por nós mesmos (fromMe)", () => {
-    const payload = buildPayload({ data: { key: { fromMe: true, remoteJid: "5585998193813@s.whatsapp.net" } } });
+  it("processa mensagem fromMe quando não é eco da nossa confirmação (anotação pra si mesmo)", () => {
+    const payload = buildPayload({
+      data: { key: { fromMe: true, remoteJid: "5585998193813@s.whatsapp.net", id: "MINHA-MSG-1" } },
+    });
+
+    expect(parseEvolutionWebhook(payload)).toEqual({
+      from: "5585998193813",
+      message: "Segunda 15h dentista",
+      timestamp: 1723000000000,
+    });
+  });
+
+  it("ignora o eco da nossa própria confirmação (fromMe com id que nós enviamos)", () => {
+    sentMessageCache.remember("BOT-CONFIRMACAO-1");
+    const payload = buildPayload({
+      data: { key: { fromMe: true, remoteJid: "5585998193813@s.whatsapp.net", id: "BOT-CONFIRMACAO-1" } },
+    });
 
     expect(parseEvolutionWebhook(payload)).toBeNull();
   });
@@ -64,6 +80,33 @@ describe("parseEvolutionWebhook", () => {
   it("ignora mensagens de grupo (@g.us)", () => {
     const payload = buildPayload({
       data: { key: { fromMe: false, remoteJid: "123456-group@g.us" } },
+    });
+
+    expect(parseEvolutionWebhook(payload)).toBeNull();
+  });
+
+  it("usa remoteJidAlt quando o WhatsApp endereça pelo LID privado (@lid)", () => {
+    const payload = buildPayload({
+      data: {
+        key: {
+          fromMe: true,
+          remoteJid: "29549559599289@lid",
+          remoteJidAlt: "5585998193813@s.whatsapp.net",
+          id: "MINHA-MSG-LID-1",
+        },
+      },
+    });
+
+    expect(parseEvolutionWebhook(payload)).toEqual({
+      from: "5585998193813",
+      message: "Segunda 15h dentista",
+      timestamp: 1723000000000,
+    });
+  });
+
+  it("ignora @lid sem remoteJidAlt utilizável", () => {
+    const payload = buildPayload({
+      data: { key: { fromMe: false, remoteJid: "29549559599289@lid", remoteJidAlt: undefined } },
     });
 
     expect(parseEvolutionWebhook(payload)).toBeNull();

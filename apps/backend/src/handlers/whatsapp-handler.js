@@ -18,6 +18,7 @@ const eventsController = require("../controllers/events.controller");
 const instanceController = require("../controllers/instance.controller");
 const authController = require("../controllers/auth.controller");
 const { withAuth } = require("../utils/with-auth");
+const { withCors } = require("../utils/with-cors");
 
 // Inicializar serviços
 const claudeService = new ClaudeService();
@@ -49,6 +50,20 @@ exports.handleWhatsappWebhook = async (event) => {
 
     if (!body) {
       logger.debug("webhook_ignored", { correlationId });
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ success: true, status: "ignored" }),
+      };
+    }
+
+    // Só processa mensagens do dono da conta. Mensagens de qualquer outro
+    // contato são ignoradas silenciosamente (o bot nunca responde a terceiros).
+    const authorizedPhoneNumber = process.env.AUTHORIZED_PHONE_NUMBER;
+    if (authorizedPhoneNumber && body.from !== authorizedPhoneNumber) {
+      logger.debug("webhook_ignored_unauthorized_sender", {
+        correlationId,
+        from: body.from,
+      });
       return {
         statusCode: 200,
         body: JSON.stringify({ success: true, status: "ignored" }),
@@ -205,6 +220,14 @@ exports.handleWhatsappWebhook = async (event) => {
         correlationId,
         clarification: claudeResponse.clarification,
       });
+    } else if (claudeResponse.action === "not_an_event") {
+      // Mensagem sem relação com agenda: fica em silêncio, não responde.
+      await dynamoDbService.updateMessage(messageRecord.messageId, {
+        status: "not_an_event",
+        claudeResponse: JSON.stringify(claudeResponse),
+      });
+
+      logger.info("not_an_event_ignored", { correlationId });
     }
 
     // 6. Retornar sucesso
@@ -310,3 +333,9 @@ exports.healthCheck = async (event) => {
     };
   }
 };
+
+// Garante CORS em toda resposta HTTP exportada (sucesso ou erro), já que
+// o API Gateway só cobre o preflight OPTIONS sozinho.
+for (const name of Object.keys(exports)) {
+  exports[name] = withCors(exports[name]);
+}

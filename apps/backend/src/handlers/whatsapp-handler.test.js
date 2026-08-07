@@ -15,6 +15,7 @@ const DynamoDBService = require("../services/dynamodb.service");
 const WhatsAppService = require("../services/whatsapp.service");
 
 const { handleWhatsappWebhook, healthCheck } = require("./whatsapp-handler");
+const sentMessageCache = require("../utils/sent-message-cache");
 
 function simpleEvent(overrides = {}) {
   return {
@@ -101,7 +102,9 @@ describe("handleWhatsappWebhook", () => {
     );
   });
 
-  it("ignora (200, sem tocar em nada) eco de mensagem própria ou grupo", async () => {
+  it("ignora (200, sem tocar em nada) eco da nossa própria confirmação", async () => {
+    sentMessageCache.remember("3EB0");
+
     const echoEvent = {
       body: JSON.stringify({
         event: "messages.upsert",
@@ -121,6 +124,93 @@ describe("handleWhatsappWebhook", () => {
     expect(body.status).toBe("ignored");
     expect(DynamoDBService.prototype.saveMessage).not.toHaveBeenCalled();
     expect(ClaudeService.prototype.extractEvent).not.toHaveBeenCalled();
+  });
+
+  it("ignora (200, sem tocar em nada) mensagem de grupo", async () => {
+    const groupEvent = {
+      body: JSON.stringify({
+        event: "messages.upsert",
+        instance: "whatsnext-marcelo-moreira",
+        data: {
+          key: { remoteJid: "123456-group@g.us", fromMe: false, id: "3EB1" },
+          message: { conversation: "Alguém confirma o horário?" },
+          messageTimestamp: Math.floor(Date.now() / 1000),
+        },
+      }),
+    };
+
+    const result = await handleWhatsappWebhook(groupEvent);
+    const body = JSON.parse(result.body);
+
+    expect(result.statusCode).toBe(200);
+    expect(body.status).toBe("ignored");
+    expect(DynamoDBService.prototype.saveMessage).not.toHaveBeenCalled();
+    expect(ClaudeService.prototype.extractEvent).not.toHaveBeenCalled();
+  });
+
+  it("processa mensagem fromMe que não é eco (anotação pra si mesmo)", async () => {
+    ClaudeService.prototype.extractEvent.mockResolvedValue(createEventClaudeResponse);
+    CalendarService.prototype.createEvent.mockResolvedValue({ id: "gcal-1" });
+    WhatsAppService.prototype.sendMessage.mockResolvedValue({});
+
+    const selfEvent = {
+      body: JSON.stringify({
+        event: "messages.upsert",
+        instance: "whatsnext-marcelo-moreira",
+        data: {
+          key: { remoteJid: "5511999999999@s.whatsapp.net", fromMe: true, id: "NOVA-MSG-XYZ" },
+          message: { conversation: "Amanhã 14h reunião com João" },
+          messageTimestamp: Math.floor(Date.now() / 1000),
+        },
+      }),
+    };
+
+    const result = await handleWhatsappWebhook(selfEvent);
+
+    expect(result.statusCode).toBe(200);
+    expect(DynamoDBService.prototype.saveMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ phoneNumber: "5511999999999" })
+    );
+  });
+
+  describe("com AUTHORIZED_PHONE_NUMBER configurado", () => {
+    const originalValue = process.env.AUTHORIZED_PHONE_NUMBER;
+
+    beforeEach(() => {
+      process.env.AUTHORIZED_PHONE_NUMBER = "5511999999999";
+    });
+
+    afterEach(() => {
+      if (originalValue === undefined) {
+        delete process.env.AUTHORIZED_PHONE_NUMBER;
+      } else {
+        process.env.AUTHORIZED_PHONE_NUMBER = originalValue;
+      }
+    });
+
+    it("ignora (200, sem tocar em nada) mensagem de número não autorizado", async () => {
+      const result = await handleWhatsappWebhook(simpleEvent({ from: "5599888887777" }));
+      const body = JSON.parse(result.body);
+
+      expect(result.statusCode).toBe(200);
+      expect(body.status).toBe("ignored");
+      expect(DynamoDBService.prototype.saveMessage).not.toHaveBeenCalled();
+      expect(ClaudeService.prototype.extractEvent).not.toHaveBeenCalled();
+      expect(WhatsAppService.prototype.sendMessage).not.toHaveBeenCalled();
+    });
+
+    it("processa normalmente mensagem do número autorizado", async () => {
+      ClaudeService.prototype.extractEvent.mockResolvedValue(createEventClaudeResponse);
+      CalendarService.prototype.createEvent.mockResolvedValue({ id: "gcal-1" });
+      WhatsAppService.prototype.sendMessage.mockResolvedValue({});
+
+      const result = await handleWhatsappWebhook(simpleEvent({ from: "5511999999999" }));
+
+      expect(result.statusCode).toBe(200);
+      expect(DynamoDBService.prototype.saveMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ phoneNumber: "5511999999999" })
+      );
+    });
   });
 
   it("retorna 400 quando a mensagem falha na validação", async () => {
@@ -143,6 +233,25 @@ describe("handleWhatsappWebhook", () => {
     expect(WhatsAppService.prototype.sendMessage).toHaveBeenCalledWith(
       "5511999999999",
       "Que dia você quer marcar?"
+    );
+  });
+
+  it("fica em silêncio (não responde) quando a mensagem não tem relação com agenda", async () => {
+    ClaudeService.prototype.extractEvent.mockResolvedValue({
+      success: false,
+      action: "not_an_event",
+      confidence: 0.1,
+      naturalResponse: null,
+    });
+
+    const result = await handleWhatsappWebhook(simpleEvent({ message: "meu nome é marcelo" }));
+
+    expect(result.statusCode).toBe(200);
+    expect(CalendarService.prototype.createEvent).not.toHaveBeenCalled();
+    expect(WhatsAppService.prototype.sendMessage).not.toHaveBeenCalled();
+    expect(DynamoDBService.prototype.updateMessage).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ status: "not_an_event" })
     );
   });
 

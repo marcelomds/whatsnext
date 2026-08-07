@@ -3,10 +3,13 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useHealth } from "./hooks/useHealth";
 import { useAuth } from "./hooks/useAuth";
+import { useLanguage } from "./hooks/useLanguage";
+import { translations } from "./i18n/translations";
 import App from "./App";
 
 vi.mock("./hooks/useHealth", () => ({ useHealth: vi.fn() }));
 vi.mock("./hooks/useAuth", () => ({ useAuth: vi.fn() }));
+vi.mock("./hooks/useLanguage", () => ({ useLanguage: vi.fn() }));
 
 vi.mock("./features/dashboard/DashboardScreen", () => ({
   DashboardScreen: () => <div>Dashboard Screen</div>,
@@ -30,6 +33,11 @@ describe("App", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useHealth).mockReturnValue({ status: "online", data: null });
+    vi.mocked(useLanguage).mockReturnValue({
+      language: "pt",
+      setLanguage: vi.fn(),
+      t: (key) => translations.pt[key],
+    });
   });
 
   it("mostra spinner enquanto a sessão está carregando", () => {

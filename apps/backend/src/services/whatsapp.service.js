@@ -5,6 +5,7 @@
 
 const axios = require("axios");
 const logger = require("../utils/logger");
+const sentMessageCache = require("../utils/sent-message-cache");
 
 class WhatsAppService {
   constructor(instanceName) {
@@ -39,6 +40,8 @@ class WhatsAppService {
           text,
         }
       );
+
+      sentMessageCache.remember(response.data?.key?.id);
 
       logger.info("whatsapp_message_sent", {
         to,

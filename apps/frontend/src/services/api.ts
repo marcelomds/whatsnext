@@ -28,11 +28,16 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-async function parseResponse<T>(response: Response): Promise<T> {
+async function parseResponse<T>(response: Response, hadToken: boolean): Promise<T> {
   if (response.status === 401) {
     setToken(null);
-    unauthorizedHandler?.();
-    throw new Error("Sessão expirada, faça login novamente");
+
+    // Só é "sessão expirada" se a requisição levava token. Sem token
+    // (ex: login/registro), 401 é credencial errada, não sessão vencida.
+    if (hadToken) {
+      unauthorizedHandler?.();
+      throw new Error("Sessão expirada, faça login novamente");
+    }
   }
 
   if (!response.ok) {
@@ -44,14 +49,16 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
+  const hadToken = Boolean(token);
   const response = await fetch(`${BASE_URL}${path}`, {
     headers: { Accept: "application/json", ...authHeaders() },
   });
 
-  return parseResponse<T>(response);
+  return parseResponse<T>(response, hadToken);
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
+  const hadToken = Boolean(token);
   const response = await fetch(`${BASE_URL}${path}`, {
     method: "POST",
     headers: {
@@ -62,5 +69,5 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  return parseResponse<T>(response);
+  return parseResponse<T>(response, hadToken);
 }

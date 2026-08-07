@@ -19,12 +19,14 @@ natural.
 ## ✨ Features
 
 - ✅ Número real de WhatsApp, conectado via QR code direto do painel web (Evolution API)
+- ✅ Só você por design — só mensagens de `AUTHORIZED_PHONE_NUMBER` são processadas; qualquer outra pessoa que mandar mensagem pro número é ignorada em silêncio, sem resposta automática pra estranhos
+- ✅ Mandar mensagem pra si mesmo funciona pra agendar (o padrão "mensagem para você" do WhatsApp é tratado como comando, não como eco)
 - ✅ Mensagem em linguagem natural → Claude extrai título, data, hora e duração
 - ✅ Evento criado automaticamente no Google Calendar, confirmação enviada de volta no WhatsApp
-- ✅ Trata mensagens casuais/sem relação com agendamento sem travar (pede esclarecimento)
+- ✅ Mensagens sem relação com agendamento (papo, "oi", dizer o próprio nome) são classificadas como `not_an_event` e não recebem resposta nenhuma — só pede esclarecimento quando você realmente tá tentando agendar algo
 - ✅ Autenticação JWT (registro/login) — cada conta tem sua própria instância WhatsApp
-- ✅ Painel web (React + TypeScript) — conectar/desconectar WhatsApp, ver mensagens e eventos
-- ✅ Deploy real na AWS (Lambda + API Gateway + DynamoDB), não só local
+- ✅ Painel web (React + TypeScript) — tema claro/índigo, alternância de idioma EN/PT, conectar/desconectar WhatsApp, lista de eventos + visão de calendário mensal, card de próximo evento em destaque
+- ✅ Deploy real na AWS — backend em Lambda + API Gateway + DynamoDB, frontend em S3 + CloudFront (HTTPS)
 - ✅ Stack de dev local via Docker Compose (DynamoDB Local + admin UI)
 - ✅ CI em todo push (testes do backend + build do frontend)
 
@@ -47,10 +49,10 @@ node scripts/create-dynamodb-tables.js
 # 4. Rodar testes
 npm test
 
-# 5. Subir o backend (Serverless Offline)
+# 5. Subir o backend (Serverless Offline) — precisa de Node 18 (`nvm use 18`)
 npm run dev
 
-# 6. Subir o painel
+# 6. Subir o painel — precisa de Node 20.12+ (`nvm use 20`), diferente do backend
 cd apps/frontend && cp .env.example .env && npm install && npm run dev
 ```
 
@@ -88,11 +90,12 @@ whatsnext/
 │   └── frontend/                            (React + TypeScript + Tailwind)
 │       └── src/
 │           ├── services/                    (wrapper de fetch tipado por recurso da API)
-│           ├── hooks/                       (useAuth, useEvents, useConnectInstance...)
-│           ├── contexts/                    (AuthContext/AuthProvider)
+│           ├── hooks/                       (useAuth, useEvents, useConnectInstance, useLanguage...)
+│           ├── contexts/                    (AuthContext/AuthProvider, LanguageContext/LanguageProvider)
+│           ├── i18n/                        (dicionário de tradução EN/PT)
 │           └── features/
 │               ├── auth/                    (LoginScreen, RegisterScreen)
-│               ├── dashboard/                (tabelas de mensagens/eventos)
+│               ├── dashboard/                (NextEventCard, EventsTable, CalendarView)
 │               └── connect/                 (pareamento por QR, desconectar)
 ├── api/                                     (adapter pra Vercel Functions — deploy alternativo)
 ├── scripts/
@@ -117,9 +120,10 @@ whatsnext/
 | **IA** | Claude API (Anthropic) — Haiku por padrão |
 | **Calendário** | Google Calendar API (OAuth2) |
 | **WhatsApp** | Evolution API |
-| **Linguagem backend** | Node.js 18 |
-| **Frontend** | React 19 + TypeScript + Vite + Tailwind CSS v4 |
-| **Testes** | Jest |
+| **Linguagem backend** | Node.js 18 (`serverless-offline` ainda não roda em 20+) |
+| **Frontend** | React 19 + TypeScript + Vite + Tailwind CSS v4 — precisa de Node.js 20.12+ (Vite/Vitest usam `util.styleText`) |
+| **Hospedagem frontend** | S3 (privado, OAC) + CloudFront (HTTPS) |
+| **Testes** | Jest (backend), Vitest (frontend) |
 | **Dev local** | Docker Compose |
 | **CI** | GitHub Actions (testes backend + build frontend) |
 
@@ -141,21 +145,26 @@ whatsnext/
 ## 💡 Como Funciona
 
 1. **Mensagem chega no WhatsApp** — *"Segunda 14h reunião com João"*
-2. **Evolution API chama o webhook** com o formato real do payload (`{event, instance, data: {key, message, messageTimestamp}}`); ecos das nossas próprias respostas e mensagens de grupo são filtrados antes de qualquer processamento
-3. **Lambda armazena a mensagem** no DynamoDB, depois manda o texto (junto com histórico recente) pro Claude
-4. **Claude extrai o evento** — título, data, hora, duração — ou pede esclarecimento se faltar informação
-5. **Evento é criado** no Google Calendar, status atualizado no DynamoDB, e confirmação enviada de volta no WhatsApp
+2. **Evolution API chama o webhook** com o formato real do payload (`{event, instance, data: {key, message, messageTimestamp}}`). O endereçamento `@lid` (privacidade) mais novo do WhatsApp é resolvido de volta pro número via `remoteJidAlt`; mensagens de grupo são descartadas; só o *eco* da nossa própria confirmação é filtrado (comparando o ID da mensagem), então uma mensagem mandada pra si mesmo continua sendo tratada como comando real
+3. **Remetente é conferido contra `AUTHORIZED_PHONE_NUMBER`** — qualquer outro número é ignorado em silêncio (200 OK, sem resposta, nada é salvo)
+4. **Lambda armazena a mensagem** no DynamoDB, depois manda o texto (junto com histórico recente) pro Claude
+5. **Claude classifica a mensagem**: `create_event` (tem informação suficiente), `request_clarification` (claramente sobre agendar, mas falta data/hora), ou `not_an_event` (sem relação — papo, um nome, uma pergunta) — só as duas primeiras geram resposta no WhatsApp
+6. **Evento é criado** no Google Calendar, status atualizado no DynamoDB, e confirmação enviada de volta no WhatsApp
 
 ## 🔐 Segurança
 
 - `.env` / `.env.production` nunca commitados (veja `.gitignore`)
+- **`AUTHORIZED_PHONE_NUMBER`**: o webhook só age em mensagens desse número — qualquer outra pessoa que mandar mensagem pro WhatsApp conectado não recebe resposta e nada é salvo. Sem isso, mensagens mal classificadas de terceiros podem disparar respostas automáticas indesejadas (e o próprio WhatsApp pode sinalizar/deslogar um número que aparenta rodar um bot não convidado)
 - Senhas com hash bcrypt, sessões são JWT stateless (expira em 30 dias)
 - IAM roles por Lambda, restritas exatamente às tabelas/índices DynamoDB que cada uma usa
 - Validação de entrada (Joi) em toda mensagem recebida
+- Headers de CORS são adicionados explicitamente por toda resposta da Lambda (wrapper `withCors`) — o `cors: true` do API Gateway só cobre o preflight OPTIONS, não a resposta real de GET/POST
 
 ## 📦 Deploy
 
-O backend faz deploy real na AWS via Serverless Framework. Produção usa um
+### Backend
+
+Faz deploy real na AWS via Serverless Framework. Produção usa um
 `.env.production` separado (nunca o `.env` local — ele aponta pro DynamoDB local
 e quebraria na nuvem):
 
@@ -170,6 +179,24 @@ Existe também um adapter alternativo pra Vercel Functions em `/api` (veja
 `vercel.json`), caso prefira fazer deploy lá em vez da AWS — mesmos controllers,
 só o ponto de entrada é mais fino.
 
+### Frontend
+
+Build estático servido de um bucket S3 privado atrás do CloudFront (HTTPS, sem
+acesso público ao bucket — o CloudFront alcança o S3 via Origin Access Control):
+
+```bash
+cd apps/frontend
+# o .env deve apontar VITE_API_URL pra URL do API Gateway de prod, não localhost
+npm run build
+
+aws s3 sync dist/ s3://<seu-bucket>/ --delete
+aws cloudfront create-invalidation --distribution-id <seu-distribution-id> --paths "/*"
+```
+
+O bucket S3 + distribuição CloudFront + Origin Access Control são configurados
+uma vez só (a policy do bucket é restrita ao ARN da distribuição CloudFront);
+não são recriados a cada deploy, só o sync + invalidation acima.
+
 ## 🧪 Testes
 
 ```bash
@@ -183,7 +210,9 @@ cd apps/frontend && npm run build   # type-check + build do frontend
 - [x] Persistência no DynamoDB
 - [x] Autenticação JWT, instância WhatsApp por usuário
 - [x] Painel web (conectar/dashboard)
-- [x] Deploy real na AWS, testado ponta a ponta
+- [x] Deploy real na AWS, testado ponta a ponta (backend + frontend)
+- [x] Autorização só-você (`AUTHORIZED_PHONE_NUMBER`) + silêncio pra mensagens sem relação
+- [x] Painel web EN/PT com visão de calendário + destaque do próximo evento
 - [ ] Transcrição de mensagens de áudio
 - [ ] Suporte a grupos
 - [ ] Eventos recorrentes

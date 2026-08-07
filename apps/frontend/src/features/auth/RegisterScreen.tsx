@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useAuth } from "../../hooks/useAuth";
+import { useLanguage } from "../../hooks/useLanguage";
 
 interface RegisterScreenProps {
   onSwitchToLogin: () => void;
@@ -8,6 +9,7 @@ interface RegisterScreenProps {
 
 export function RegisterScreen({ onSwitchToLogin }: RegisterScreenProps) {
   const { register } = useAuth();
+  const { t } = useLanguage();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,22 +37,23 @@ export function RegisterScreen({ onSwitchToLogin }: RegisterScreenProps) {
   }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 py-12">
-      <div className="pointer-events-none absolute left-1/2 top-1/3 h-[32rem] w-[32rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-green-600/20 blur-3xl" />
-
-      <div className="relative flex w-full max-w-sm flex-col items-center gap-8">
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-6 py-12">
+      <div className="flex w-full max-w-sm flex-col items-center gap-8">
         <div className="text-center">
-          <p className="text-xs font-medium uppercase tracking-wider text-green-400">WhatsNext</p>
-          <h1 className="mt-1 text-2xl font-semibold text-neutral-50">Criar conta</h1>
+          <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-lg font-bold text-white">
+            W
+          </div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-indigo-500">WhatsNext</p>
+          <h1 className="mt-1 text-2xl font-semibold text-slate-900">{t("registerTitle")}</h1>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="flex w-full flex-col gap-4 rounded-2xl border border-neutral-800 bg-neutral-900/80 p-6 shadow-2xl shadow-black/40 backdrop-blur"
+          className="flex w-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60"
         >
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-neutral-400" htmlFor="name">
-              Nome
+            <label className="text-xs font-medium text-slate-500" htmlFor="name">
+              {t("registerName")}
             </label>
             <input
               id="name"
@@ -58,14 +61,14 @@ export function RegisterScreen({ onSwitchToLogin }: RegisterScreenProps) {
               autoComplete="name"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="Seu nome"
-              className="rounded-lg border border-neutral-800 bg-neutral-950 px-4 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-600 focus:border-green-500 focus:outline-none"
+              placeholder={t("registerNamePlaceholder")}
+              className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-neutral-400" htmlFor="email">
-              E-mail
+            <label className="text-xs font-medium text-slate-500" htmlFor="email">
+              {t("loginEmail")}
             </label>
             <input
               id="email"
@@ -74,13 +77,13 @@ export function RegisterScreen({ onSwitchToLogin }: RegisterScreenProps) {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="voce@exemplo.com"
-              className="rounded-lg border border-neutral-800 bg-neutral-950 px-4 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-600 focus:border-green-500 focus:outline-none"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-neutral-400" htmlFor="password">
-              Senha
+            <label className="text-xs font-medium text-slate-500" htmlFor="password">
+              {t("registerPassword")}
             </label>
             <input
               id="password"
@@ -88,43 +91,43 @@ export function RegisterScreen({ onSwitchToLogin }: RegisterScreenProps) {
               autoComplete="new-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Mínimo 6 caracteres"
-              className="rounded-lg border border-neutral-800 bg-neutral-950 px-4 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-600 focus:border-green-500 focus:outline-none"
+              placeholder={t("registerPasswordPlaceholder")}
+              className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-neutral-400" htmlFor="evolutionInstance">
-              Nome da instância Evolution API <span className="text-neutral-600">(opcional)</span>
+            <label className="text-xs font-medium text-slate-500" htmlFor="evolutionInstance">
+              {t("registerInstanceLabel")} <span className="text-slate-400">{t("registerInstanceOptional")}</span>
             </label>
             <input
               id="evolutionInstance"
               type="text"
               value={evolutionInstance}
               onChange={(event) => setEvolutionInstance(event.target.value)}
-              placeholder="Deixe em branco para gerar automaticamente"
-              className="rounded-lg border border-neutral-800 bg-neutral-950 px-4 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-600 focus:border-green-500 focus:outline-none"
+              placeholder={t("registerInstancePlaceholder")}
+              className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
             />
-            <p className="text-xs text-neutral-600">
-              Já tem uma instância pareada? Informe o nome exato para reutilizá-la.
-            </p>
+            <p className="text-xs text-slate-400">{t("registerInstanceHint")}</p>
           </div>
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+          )}
 
           <button
             type="submit"
             disabled={!canSubmit}
-            className="mt-1 rounded-lg bg-green-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-40"
+            className="mt-1 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-200 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {submitting ? "Criando..." : "Criar conta"}
+            {submitting ? t("registerSubmitting") : t("registerSubmit")}
           </button>
         </form>
 
-        <p className="text-sm text-neutral-500">
-          Já tem conta?{" "}
-          <button type="button" onClick={onSwitchToLogin} className="font-medium text-green-400 hover:text-green-300">
-            Entrar
+        <p className="text-sm text-slate-500">
+          {t("registerHaveAccount")}{" "}
+          <button type="button" onClick={onSwitchToLogin} className="font-medium text-indigo-600 hover:text-indigo-500">
+            {t("registerSignIn")}
           </button>
         </p>
       </div>

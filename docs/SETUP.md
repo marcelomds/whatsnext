@@ -2,7 +2,7 @@
 
 ## 📋 Pré-requisitos
 
-- Node.js 18+ instalado
+- Node.js 18 pro backend (`serverless-offline` não roda em 20+) e Node.js 20.12+ pro frontend (Vite/Vitest usam `util.styleText`) — use `nvm` pra alternar
 - npm ou yarn
 - Conta AWS (com permissões IAM)
 - Conta Google (para Google Calendar)
@@ -51,6 +51,11 @@ EVOLUTION_API_KEY=seu-api-key-evolution
 
 # WhatsApp
 WHATSAPP_PHONE_NUMBER=5511999999999
+
+# Só processa mensagens vindas deste número (o dono da conta). Qualquer outro
+# remetente é ignorado silenciosamente — sem isso o bot responde a quem
+# mandar mensagem pro número conectado, não só você.
+AUTHORIZED_PHONE_NUMBER=5511999999999
 
 # Logging
 LOG_LEVEL=info

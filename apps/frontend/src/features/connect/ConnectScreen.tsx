@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useConnectInstance } from "../../hooks/useConnectInstance";
+import { useLanguage } from "../../hooks/useLanguage";
 
 export function ConnectScreen() {
   const { status, loading, connecting, disconnecting, qrCode, error, startConnect, disconnect } =
     useConnectInstance();
+  const { t } = useLanguage();
   const [confirmingDisconnect, setConfirmingDisconnect] = useState(false);
 
   if (loading) {
-    return <p className="text-neutral-400">Verificando conexão...</p>;
+    return <p className="text-slate-500">{t("connectChecking")}</p>;
   }
 
   const isOpen = status?.state === "open";
@@ -19,44 +21,42 @@ export function ConnectScreen() {
 
   return (
     <div className="mx-auto max-w-md space-y-6">
-      <h2 className="text-lg font-semibold text-neutral-100">Conectar WhatsApp</h2>
+      <h2 className="text-xl font-semibold text-slate-900">{t("connectTitle")}</h2>
 
       {error && (
-        <p className="rounded-lg border border-red-900 bg-red-950/50 px-4 py-2 text-sm text-red-300">
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-600">
           {error}
         </p>
       )}
 
       {isOpen && (
         <div className="space-y-3">
-          <p className="rounded-lg border border-green-900 bg-green-950/50 px-4 py-2 text-sm font-medium text-green-400">
-            ✅ WhatsApp conectado e pronto para uso.
+          <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
+            {t("connectReady")}
           </p>
 
           {!confirmingDisconnect ? (
             <button
               onClick={() => setConfirmingDisconnect(true)}
-              className="text-sm font-medium text-neutral-400 underline decoration-dotted hover:text-neutral-200"
+              className="text-sm font-medium text-slate-500 underline decoration-dotted hover:text-slate-800"
             >
-              Desconectar / trocar de número
+              {t("connectDisconnectLink")}
             </button>
           ) : (
-            <div className="flex items-center gap-3 rounded-lg border border-neutral-800 bg-neutral-900/60 px-4 py-3">
-              <p className="text-sm text-neutral-300">
-                Tem certeza? Vai precisar escanear o QR code de novo.
-              </p>
+            <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm shadow-slate-200/50">
+              <p className="text-sm text-slate-600">{t("connectConfirmQuestion")}</p>
               <button
                 onClick={handleDisconnect}
                 disabled={disconnecting}
                 className="rounded-full bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
               >
-                {disconnecting ? "Desconectando..." : "Confirmar"}
+                {disconnecting ? t("connectDisconnecting") : t("connectConfirm")}
               </button>
               <button
                 onClick={() => setConfirmingDisconnect(false)}
-                className="text-xs font-medium text-neutral-500 hover:text-neutral-300"
+                className="text-xs font-medium text-slate-400 hover:text-slate-700"
               >
-                Cancelar
+                {t("connectCancel")}
               </button>
             </div>
           )}
@@ -65,24 +65,22 @@ export function ConnectScreen() {
 
       {!isOpen && !qrCode && (
         <div className="space-y-3">
-          <p className="text-sm text-neutral-400">WhatsApp ainda não conectado.</p>
+          <p className="text-sm text-slate-500">{t("connectNotConnected")}</p>
           <button
             onClick={startConnect}
             disabled={connecting}
-            className="rounded-full bg-green-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-400 disabled:opacity-50"
+            className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-indigo-200 transition hover:bg-indigo-500 disabled:opacity-50"
           >
-            {connecting ? "Gerando..." : "Gerar QR Code"}
+            {connecting ? t("connectGenerating") : t("connectGenerateQr")}
           </button>
         </div>
       )}
 
       {qrCode && (
-        <div className="space-y-3 rounded-xl border border-neutral-800 bg-neutral-900/60 p-6 text-center">
-          <p className="text-sm text-neutral-400">
-            Abra o WhatsApp no celular → Aparelhos conectados → Conectar aparelho, e escaneie:
-          </p>
-          <img src={qrCode} alt="QR Code de pareamento" className="mx-auto max-w-[240px] rounded-lg" />
-          <p className="text-sm text-neutral-500">Aguardando pareamento...</p>
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-6 text-center shadow-sm shadow-slate-200/50">
+          <p className="text-sm text-slate-500">{t("connectScanInstruction")}</p>
+          <img src={qrCode} alt="QR Code de pareamento" className="mx-auto max-w-[240px] rounded-lg border border-slate-200" />
+          <p className="text-sm text-slate-400">{t("connectWaitingPairing")}</p>
         </div>
       )}
     </div>

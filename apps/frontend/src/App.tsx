@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useHealth } from "./hooks/useHealth";
 import { useAuth } from "./hooks/useAuth";
+import { useLanguage } from "./hooks/useLanguage";
 import { DashboardScreen } from "./features/dashboard/DashboardScreen";
 import { ConnectScreen } from "./features/connect/ConnectScreen";
 import { LoginScreen } from "./features/auth/LoginScreen";
@@ -8,34 +9,38 @@ import { RegisterScreen } from "./features/auth/RegisterScreen";
 
 type Tab = "dashboard" | "connect";
 
-const TABS: { value: Tab; label: string }[] = [
-  { value: "dashboard", label: "Dashboard" },
-  { value: "connect", label: "Conectar WhatsApp" },
-];
-
 function App() {
   const { status } = useHealth();
   const { user, loading, logout } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const [tab, setTab] = useState<Tab>("dashboard");
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
 
+  const TABS: { value: Tab; label: string }[] = [
+    { value: "dashboard", label: t("tabDashboard") },
+    { value: "connect", label: t("tabConnect") },
+  ];
+
   const statusConfig = {
-    loading: { label: "Verificando...", dot: "bg-yellow-400" },
-    online: { label: "API online", dot: "bg-green-500" },
-    offline: { label: "API offline", dot: "bg-red-500" },
+    loading: { label: t("apiChecking"), dot: "bg-amber-400" },
+    online: { label: t("apiOnline"), dot: "bg-emerald-500" },
+    offline: { label: t("apiOffline"), dot: "bg-red-500" },
   }[status];
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-neutral-950 text-neutral-100">
-        <span className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-700 border-t-green-400" />
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-900">
+        <span className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-indigo-600" />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-neutral-950 text-neutral-100">
+      <div className="relative min-h-screen bg-slate-50 text-slate-900">
+        <div className="absolute right-6 top-6">
+          <LanguageToggle language={language} setLanguage={setLanguage} />
+        </div>
         {authMode === "login" ? (
           <LoginScreen onSwitchToRegister={() => setAuthMode("register")} />
         ) : (
@@ -46,20 +51,25 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100">
-      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between gap-6 border-b border-neutral-800 bg-neutral-900/80 px-8 backdrop-blur">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between gap-6 border-b border-slate-200 bg-white/90 px-8 backdrop-blur">
         <div className="flex items-center gap-8">
-          <span className="text-sm font-semibold tracking-wide text-green-400">WhatsNext</span>
+          <span className="flex items-center gap-2 text-sm font-semibold tracking-wide text-slate-900">
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-600 text-xs font-bold text-white">
+              W
+            </span>
+            WhatsNext
+          </span>
 
-          <nav className="flex items-center gap-1.5 rounded-full border border-neutral-800 bg-neutral-950/60 p-1.5 text-sm">
+          <nav className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 p-1.5 text-sm">
             {TABS.map((option) => (
               <button
                 key={option.value}
                 onClick={() => setTab(option.value)}
                 className={`rounded-full px-4 py-2 font-medium transition ${
                   tab === option.value
-                    ? "bg-green-500 text-white"
-                    : "text-neutral-400 hover:text-neutral-200"
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-slate-500 hover:text-slate-900"
                 }`}
               >
                 {option.label}
@@ -69,18 +79,20 @@ function App() {
         </div>
 
         <div className="flex items-center gap-3 text-xs">
-          <div className="flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950/60 px-3 py-1.5">
+          <LanguageToggle language={language} setLanguage={setLanguage} />
+
+          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
             <span className={`h-2 w-2 rounded-full ${statusConfig.dot} animate-pulse`} />
-            <span className="text-neutral-400">{statusConfig.label}</span>
+            <span className="text-slate-500">{statusConfig.label}</span>
           </div>
 
-          <div className="flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950/60 py-1.5 pr-1.5 pl-3">
-            <span className="text-neutral-400">{user.name}</span>
+          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 py-1.5 pr-1.5 pl-3">
+            <span className="text-slate-600">{user.name}</span>
             <button
               onClick={() => logout()}
-              className="rounded-full border border-neutral-700 px-2.5 py-1 font-medium text-neutral-300 transition hover:border-neutral-500"
+              className="rounded-full border border-slate-300 px-2.5 py-1 font-medium text-slate-600 transition hover:border-slate-400 hover:text-slate-900"
             >
-              Sair
+              {t("logout")}
             </button>
           </div>
         </div>
@@ -90,6 +102,30 @@ function App() {
         {tab === "dashboard" && <DashboardScreen />}
         {tab === "connect" && <ConnectScreen />}
       </main>
+    </div>
+  );
+}
+
+function LanguageToggle({
+  language,
+  setLanguage,
+}: {
+  language: "pt" | "en";
+  setLanguage: (language: "pt" | "en") => void;
+}) {
+  return (
+    <div className="flex items-center gap-0.5 rounded-full border border-slate-200 bg-slate-50 p-0.5 text-xs font-medium">
+      {(["pt", "en"] as const).map((option) => (
+        <button
+          key={option}
+          onClick={() => setLanguage(option)}
+          className={`rounded-full px-2.5 py-1 uppercase transition ${
+            language === option ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-slate-900"
+          }`}
+        >
+          {option}
+        </button>
+      ))}
     </div>
   );
 }

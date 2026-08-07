@@ -2,9 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useConnectInstance } from "../../hooks/useConnectInstance";
+import { useLanguage } from "../../hooks/useLanguage";
+import { translations } from "../../i18n/translations";
 import { ConnectScreen } from "./ConnectScreen";
 
 vi.mock("../../hooks/useConnectInstance", () => ({ useConnectInstance: vi.fn() }));
+vi.mock("../../hooks/useLanguage", () => ({ useLanguage: vi.fn() }));
 
 function mockHook(overrides = {}) {
   vi.mocked(useConnectInstance).mockReturnValue({
@@ -21,7 +24,14 @@ function mockHook(overrides = {}) {
 }
 
 describe("ConnectScreen", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useLanguage).mockReturnValue({
+      language: "pt",
+      setLanguage: vi.fn(),
+      t: (key) => translations.pt[key],
+    });
+  });
 
   it("mostra 'Verificando conexão...' enquanto carrega", () => {
     mockHook({ loading: true });
