@@ -4,9 +4,10 @@
  */
 
 import { google } from "googleapis";
-import type { calendar_v3 } from "googleapis";
-import type { OAuth2Client } from "google-auth-library";
+import type { calendar_v3, Auth } from "googleapis";
 import logger from "../utils/logger";
+
+type OAuth2Client = Auth.OAuth2Client;
 
 const { OAuth2 } = google.auth;
 
@@ -359,7 +360,7 @@ class CalendarService {
   /**
    * Atualizar tokens (se expirou)
    */
-  async refreshAccessToken(): Promise<import("google-auth-library").Credentials> {
+  async refreshAccessToken(): Promise<Auth.Credentials> {
     try {
       const { credentials } = await this.oauth2Client.refreshAccessToken();
       this.oauth2Client.setCredentials(credentials);

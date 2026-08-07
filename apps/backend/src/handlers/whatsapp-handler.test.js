@@ -10,11 +10,11 @@ jest.mock("../services/dynamodb.service");
 jest.mock("../services/whatsapp.service");
 jest.mock("../services/transcription.service");
 
-const ClaudeService = require("../services/claude.service");
-const CalendarService = require("../services/calendar.service");
-const DynamoDBService = require("../services/dynamodb.service");
-const WhatsAppService = require("../services/whatsapp.service");
-const TranscriptionService = require("../services/transcription.service");
+const ClaudeService = require("../services/claude.service").default;
+const CalendarService = require("../services/calendar.service").default;
+const DynamoDBService = require("../services/dynamodb.service").default;
+const WhatsAppService = require("../services/whatsapp.service").default;
+const TranscriptionService = require("../services/transcription.service").default;
 
 const { handleWhatsappWebhook, healthCheck } = require("./whatsapp-handler");
 const sentMessageCache = require("../utils/sent-message-cache");

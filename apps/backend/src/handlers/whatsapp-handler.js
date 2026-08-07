@@ -8,11 +8,11 @@ const { errorHandler } = require("../utils/error-handler");
 const { validateMessage } = require("../utils/validators");
 const { parseEvolutionWebhook } = require("../utils/evolution-payload");
 
-const ClaudeService = require("../services/claude.service");
-const CalendarService = require("../services/calendar.service");
-const DynamoDBService = require("../services/dynamodb.service");
-const WhatsAppService = require("../services/whatsapp.service");
-const TranscriptionService = require("../services/transcription.service");
+const ClaudeService = require("../services/claude.service").default;
+const CalendarService = require("../services/calendar.service").default;
+const DynamoDBService = require("../services/dynamodb.service").default;
+const WhatsAppService = require("../services/whatsapp.service").default;
+const TranscriptionService = require("../services/transcription.service").default;
 
 const messagesController = require("../controllers/messages.controller");
 const eventsController = require("../controllers/events.controller");
