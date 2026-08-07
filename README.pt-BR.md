@@ -13,7 +13,7 @@ evento aparece sozinho no Google Agenda. Sem app, sem comando de bot — só lin
 natural.
 
 <p align="center">
-  <img src="docs/assets/architecture.svg" alt="Fluxo da mensagem: WhatsApp para Evolution API para AWS Lambda, que chama o Claude para extrair o evento, depois Google Calendar e DynamoDB, com a confirmação voltando pro WhatsApp" width="820">
+  <img src="docs/assets/architecture.png" alt="Fluxo da mensagem: WhatsApp para Evolution API para AWS Lambda; áudio é transcrito pelo OpenAI Whisper, texto é enviado pro Claude (Haiku) que extrai o evento, depois Google Calendar e DynamoDB, com a confirmação voltando pro WhatsApp" width="820">
 </p>
 
 ## ✨ Features
@@ -104,7 +104,7 @@ whatsnext/
 ├── docs/
 │   ├── SETUP.md
 │   ├── PROMPTS.md
-│   └── assets/architecture.svg
+│   └── assets/architecture.png
 ├── docker-compose.yml                       (DynamoDB Local + admin UI + api, pra dev local)
 ├── package.json
 └── .env.example
@@ -213,9 +213,7 @@ cd apps/frontend && npm run build   # type-check + build do frontend
 - [x] Deploy real na AWS, testado ponta a ponta (backend + frontend)
 - [x] Autorização só-você (`AUTHORIZED_PHONE_NUMBER`) + silêncio pra mensagens sem relação
 - [x] Painel web EN/PT com visão de calendário + destaque do próximo evento
-- [ ] Transcrição de mensagens de áudio
-- [ ] Suporte a grupos
-- [ ] Eventos recorrentes
+- [x] Transcrição de mensagens de áudio
 
 ## 🐛 Troubleshooting
 

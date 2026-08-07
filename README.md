@@ -13,7 +13,7 @@ number, and it shows up on Google Calendar automatically. No app, no bot command
 just natural language.
 
 <p align="center">
-  <img src="docs/assets/architecture.svg" alt="Message flow: WhatsApp to Evolution API to AWS Lambda, which calls Claude to extract the event, then Google Calendar and DynamoDB, with the confirmation flowing back to WhatsApp" width="820">
+  <img src="docs/assets/architecture.png" alt="Message flow: WhatsApp to Evolution API to AWS Lambda; audio is transcribed by OpenAI Whisper, text is sent to Claude (Haiku) to extract the event, then Google Calendar and DynamoDB, with the confirmation flowing back to WhatsApp" width="820">
 </p>
 
 ## ✨ Features
@@ -104,7 +104,7 @@ whatsnext/
 ├── docs/
 │   ├── SETUP.md
 │   ├── PROMPTS.md
-│   └── assets/architecture.svg
+│   └── assets/architecture.png
 ├── docker-compose.yml                       (DynamoDB Local + admin UI + api, for local dev)
 ├── package.json
 └── .env.example
@@ -212,7 +212,7 @@ cd apps/frontend && npm run build   # frontend type-check + build
 - [x] Real AWS deploy, tested end-to-end (backend + frontend)
 - [x] Self-only authorization (`AUTHORIZED_PHONE_NUMBER`) + silent handling of unrelated messages
 - [x] EN/PT web panel with calendar view + next-event highlight
-- [ ] Audio message transcription
+- [x] Audio message transcription
 
 ## 🐛 Troubleshooting
 
