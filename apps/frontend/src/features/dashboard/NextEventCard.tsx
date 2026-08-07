@@ -30,22 +30,28 @@ export function NextEventCard() {
   const now = Date.now();
   const upcoming = events
     .filter((event) => new Date(event.startTime).getTime() >= now)
-    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())[0];
+    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+    .slice(0, 2);
 
-  if (!upcoming) return null;
-
-  const relative = daysUntil(upcoming.startTime, language);
+  if (upcoming.length === 0) return null;
 
   return (
-    <section className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">
-        {t("nextEventLabel")}
-      </p>
-      <p className="mt-1 text-lg font-semibold text-slate-900">{upcoming.title}</p>
-      <p className="mt-0.5 text-sm text-slate-500">
-        {formatDate(upcoming.startTime)}
-        {relative && <span className="ml-2 text-indigo-600">· {relative}</span>}
-      </p>
+    <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {upcoming.map((event, index) => {
+        const relative = daysUntil(event.startTime, language);
+        return (
+          <div key={event.eventId} className="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-500">
+              {index === 0 ? t("nextEventLabel") : t("thenEventLabel")}
+            </p>
+            <p className="mt-0.5 text-sm font-semibold text-slate-900">{event.title}</p>
+            <p className="text-xs text-slate-500">
+              {formatDate(event.startTime)}
+              {relative && <span className="ml-1.5 text-indigo-600">· {relative}</span>}
+            </p>
+          </div>
+        );
+      })}
     </section>
   );
 }

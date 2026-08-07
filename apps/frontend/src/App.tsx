@@ -29,7 +29,7 @@ function App() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-900">
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 text-slate-900">
         <span className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-indigo-600" />
       </div>
     );
@@ -37,7 +37,7 @@ function App() {
 
   if (!user) {
     return (
-      <div className="relative min-h-screen bg-slate-50 text-slate-900">
+      <div className="relative min-h-screen bg-slate-100 text-slate-900">
         <div className="absolute right-6 top-6">
           <LanguageToggle language={language} setLanguage={setLanguage} />
         </div>
@@ -51,7 +51,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-slate-100 text-slate-900">
       <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between gap-6 border-b border-slate-200 bg-white/90 px-8 backdrop-blur">
         <div className="flex items-center gap-8">
           <span className="flex items-center gap-2 text-sm font-semibold tracking-wide text-slate-900">

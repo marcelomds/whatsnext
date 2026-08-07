@@ -89,4 +89,23 @@ describe("NextEventCard", () => {
     render(<NextEventCard />);
     expect(screen.getByText(/em 5 dias/)).toBeInTheDocument();
   });
+
+  it("mostra os 2 próximos eventos, o segundo rotulado 'Em seguida'", () => {
+    vi.mocked(useEvents).mockReturnValue({
+      loading: false,
+      error: null,
+      events: [
+        event({ eventId: "e1", title: "Almoço", startTime: "2026-08-10T14:00:00" }),
+        event({ eventId: "e2", title: "Reunião", startTime: "2026-08-11T10:00:00" }),
+        event({ eventId: "e3", title: "Depois demais", startTime: "2026-08-20T10:00:00" }),
+      ],
+    });
+
+    render(<NextEventCard />);
+
+    expect(screen.getByText("Almoço")).toBeInTheDocument();
+    expect(screen.getByText("Reunião")).toBeInTheDocument();
+    expect(screen.queryByText("Depois demais")).not.toBeInTheDocument();
+    expect(screen.getByText("Em seguida")).toBeInTheDocument();
+  });
 });

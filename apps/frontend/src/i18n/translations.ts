@@ -32,6 +32,7 @@ export const translations = {
 
     dashboardTitle: "Dashboard",
     nextEventLabel: "Próximo evento",
+    thenEventLabel: "Em seguida",
 
     eventsTitle: "Eventos criados",
     eventsColTitle: "Título",
@@ -110,6 +111,7 @@ export const translations = {
 
     dashboardTitle: "Dashboard",
     nextEventLabel: "Next event",
+    thenEventLabel: "Then",
 
     eventsTitle: "Events created",
     eventsColTitle: "Title",

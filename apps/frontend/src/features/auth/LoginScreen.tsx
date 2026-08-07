@@ -34,7 +34,7 @@ export function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-6 py-12">
+    <main className="flex min-h-screen items-center justify-center bg-slate-100 px-6 py-12">
       <div className="flex w-full max-w-sm flex-col items-center gap-8">
         <div className="text-center">
           <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-lg font-bold text-white">
