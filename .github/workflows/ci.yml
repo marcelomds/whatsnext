@@ -45,6 +45,10 @@ jobs:
         working-directory: apps/frontend
         run: npm ci
 
+      - name: Run tests
+        working-directory: apps/frontend
+        run: npm test
+
       - name: Build (type-check + bundle)
         working-directory: apps/frontend
         run: npm run build
