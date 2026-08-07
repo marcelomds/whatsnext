@@ -12,6 +12,7 @@ const ClaudeService = require("../services/claude.service");
 const CalendarService = require("../services/calendar.service");
 const DynamoDBService = require("../services/dynamodb.service");
 const WhatsAppService = require("../services/whatsapp.service");
+const TranscriptionService = require("../services/transcription.service");
 
 const messagesController = require("../controllers/messages.controller");
 const eventsController = require("../controllers/events.controller");
@@ -25,6 +26,7 @@ const claudeService = new ClaudeService();
 const calendarService = new CalendarService();
 const dynamoDbService = new DynamoDBService();
 const whatsappService = new WhatsAppService();
+const transcriptionService = new TranscriptionService();
 
 /**
  * Handler principal de webhook WhatsApp
@@ -68,6 +70,18 @@ exports.handleWhatsappWebhook = async (event) => {
         statusCode: 200,
         body: JSON.stringify({ success: true, status: "ignored" }),
       };
+    }
+
+    // Mensagem de voz: busca o áudio na Evolution API e transcreve antes de
+    // seguir — daqui pra frente o fluxo trata como se fosse uma mensagem de texto normal.
+    if (body.audio) {
+      const media = await whatsappService.getMediaBase64(body.audio.key);
+      body.message = await transcriptionService.transcribeAudio(media.base64, body.audio.mimetype);
+
+      logger.info("audio_message_transcribed", {
+        correlationId,
+        textLength: body.message?.length || 0,
+      });
     }
 
     const validation = validateMessage(body);

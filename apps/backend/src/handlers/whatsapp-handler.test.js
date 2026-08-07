@@ -8,11 +8,13 @@ jest.mock("../services/claude.service");
 jest.mock("../services/calendar.service");
 jest.mock("../services/dynamodb.service");
 jest.mock("../services/whatsapp.service");
+jest.mock("../services/transcription.service");
 
 const ClaudeService = require("../services/claude.service");
 const CalendarService = require("../services/calendar.service");
 const DynamoDBService = require("../services/dynamodb.service");
 const WhatsAppService = require("../services/whatsapp.service");
+const TranscriptionService = require("../services/transcription.service");
 
 const { handleWhatsappWebhook, healthCheck } = require("./whatsapp-handler");
 const sentMessageCache = require("../utils/sent-message-cache");
@@ -100,6 +102,72 @@ describe("handleWhatsappWebhook", () => {
     expect(DynamoDBService.prototype.saveMessage).toHaveBeenCalledWith(
       expect.objectContaining({ phoneNumber: "5511999999999" })
     );
+  });
+
+  it("transcreve mensagem de voz e processa como se fosse texto", async () => {
+    WhatsAppService.prototype.getMediaBase64.mockResolvedValue({
+      base64: "AAAA",
+      mimetype: "audio/ogg; codecs=opus",
+    });
+    TranscriptionService.prototype.transcribeAudio.mockResolvedValue(
+      "amanhã 14h reunião com joão"
+    );
+    ClaudeService.prototype.extractEvent.mockResolvedValue(createEventClaudeResponse);
+    CalendarService.prototype.createEvent.mockResolvedValue({ id: "gcal-1" });
+    WhatsAppService.prototype.sendMessage.mockResolvedValue({});
+
+    const audioEvent = {
+      body: JSON.stringify({
+        event: "messages.upsert",
+        instance: "whatsnext-marcelo-moreira",
+        data: {
+          key: { remoteJid: "5511999999999@s.whatsapp.net", fromMe: false, id: "3EB0-AUDIO" },
+          message: { audioMessage: { mimetype: "audio/ogg; codecs=opus" } },
+          messageTimestamp: Math.floor(Date.now() / 1000),
+        },
+      }),
+    };
+
+    const result = await handleWhatsappWebhook(audioEvent);
+
+    expect(WhatsAppService.prototype.getMediaBase64).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "3EB0-AUDIO" })
+    );
+    expect(TranscriptionService.prototype.transcribeAudio).toHaveBeenCalledWith(
+      "AAAA",
+      "audio/ogg; codecs=opus"
+    );
+    expect(result.statusCode).toBe(200);
+    expect(DynamoDBService.prototype.saveMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ content: "amanhã 14h reunião com joão" })
+    );
+  });
+
+  it("retorna 500 quando a transcrição do áudio falha", async () => {
+    WhatsAppService.prototype.getMediaBase64.mockResolvedValue({
+      base64: "AAAA",
+      mimetype: "audio/ogg",
+    });
+    TranscriptionService.prototype.transcribeAudio.mockRejectedValue(
+      new Error("Falha ao transcrever áudio: 401")
+    );
+
+    const audioEvent = {
+      body: JSON.stringify({
+        event: "messages.upsert",
+        instance: "whatsnext-marcelo-moreira",
+        data: {
+          key: { remoteJid: "5511999999999@s.whatsapp.net", fromMe: false, id: "3EB0-AUDIO-2" },
+          message: { audioMessage: { mimetype: "audio/ogg" } },
+          messageTimestamp: Math.floor(Date.now() / 1000),
+        },
+      }),
+    };
+
+    const result = await handleWhatsappWebhook(audioEvent);
+
+    expect(result.statusCode).toBe(500);
+    expect(ClaudeService.prototype.extractEvent).not.toHaveBeenCalled();
   });
 
   it("ignora (200, sem tocar em nada) eco da nossa própria confirmação", async () => {

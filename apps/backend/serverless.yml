@@ -79,6 +79,7 @@ provider:
     EVOLUTION_API_KEY: ${env:EVOLUTION_API_KEY}
     EVOLUTION_INSTANCE: ${env:EVOLUTION_INSTANCE, ''}
     AUTHORIZED_PHONE_NUMBER: ${env:AUTHORIZED_PHONE_NUMBER, ''}
+    OPENAI_API_KEY: ${env:OPENAI_API_KEY, ''}
     LOG_LEVEL: ${env:LOG_LEVEL, 'info'}
     TIMEZONE: ${env:TIMEZONE, 'America/Sao_Paulo'}
   
@@ -228,12 +229,23 @@ functions:
 
 # Plugins
 plugins:
+  - serverless-esbuild
   - serverless-offline
   - serverless-plugin-tracing
 
 # Configuração offline
 custom:
   accountId: ${env:AWS_ACCOUNT_ID, '000000000000'}
+
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    exclude:
+      - aws-sdk
+    target: node18
+    platform: node
+    concurrency: 10
 
   serverless-offline:
     httpPort: 3000
