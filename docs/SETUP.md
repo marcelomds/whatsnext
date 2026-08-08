@@ -157,7 +157,20 @@ node scripts/get-google-token.js
 # 4. Copie para EVOLUTION_API_KEY e EVOLUTION_API_URL
 ```
 
-### 2.4 AWS Secrets Manager (Produção)
+### 2.4 OpenAI (Whisper — transcrição de áudio)
+
+```bash
+# 1. Acesse https://platform.openai.com/api-keys
+# 2. Crie uma nova secret key
+# 3. Copie para OPENAI_API_KEY
+# (OPENAI_TRANSCRIBE_MODEL já vem com o padrão "whisper-1" no .env.example)
+```
+
+Usada só quando o remetente manda um áudio ao invés de texto — o handler
+transcreve via Whisper antes de mandar pro Claude. Sem essa chave, mensagens
+de texto continuam funcionando normalmente; só áudio falha.
+
+### 2.5 AWS Secrets Manager (Produção)
 
 ```bash
 # Criar secret para Claude API Key
@@ -458,7 +471,9 @@ npm run logs:prod -- --tail 100
 - [ ] Claude API Key em AWS Secrets Manager
 - [ ] Google Calendar OAuth2 configurado
 - [ ] Evolution API Key segura
+- [ ] OpenAI API Key (transcrição de áudio)
 - [ ] IAM roles e policies criados
+- [ ] Secrets configurados no GitHub (Settings → Secrets and variables → Actions) para o deploy automático — veja "CI/CD" no README
 
 ### AWS
 - [ ] DynamoDB tabelas criadas

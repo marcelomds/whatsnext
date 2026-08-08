@@ -30,54 +30,60 @@ Este documento descreve a arquitetura completa do sistema de agendamento via Wha
 │  ┌──────────────────────────────────────────────────────┐    │
 │  │         Lambda (Serverless Functions)               │    │
 │  ├──────────────────────────────────────────────────────┤    │
-│  │  1. handleWhatsappWebhook                           │    │
-│  │     - Parse mensagem                                │    │
-│  │     - Valida dados                                  │    │
-│  │     - Envia ao Claude                               │    │
+│  │  handleWhatsappWebhook                              │    │
+│  │     - Parse mensagem (formato real Evolution API)   │    │
+│  │     - Se for áudio, transcreve via Whisper primeiro │    │
+│  │     - Valida dados, confere AUTHORIZED_PHONE_NUMBER │    │
+│  │     - Envia ao Claude, cria evento no Calendar      │    │
 │  │                                                      │    │
-│  │  2. processCalendarEvent                            │    │
-│  │     - Claude retorna estrutura                      │    │
-│  │     - Cria evento no Google Calendar                │    │
-│  │     - Atualiza status em DynamoDB                   │    │
+│  │  getMessages / getEvents                            │    │
+│  │     - Query DynamoDB, retorna paginado              │    │
 │  │                                                      │    │
-│  │  3. getMessages                                     │    │
-│  │     - Query DynamoDB                                │    │
-│  │     - Retorna paginado                              │    │
+│  │  register / login / me                              │    │
+│  │     - Auth JWT (bcrypt + jsonwebtoken)               │    │
 │  │                                                      │    │
-│  │  4. getEvents                                       │    │
-│  │     - Query calendário + DB                         │    │
-│  │     - Retorna histórico                             │    │
+│  │  connectInstance / disconnectInstance /             │    │
+│  │  getInstanceStatus                                   │    │
+│  │     - Gerencia a instância WhatsApp (Evolution API)  │    │
+│  │                                                      │    │
+│  │  healthCheck                                         │    │
+│  │     - Status de DynamoDB, Claude, Google Calendar    │    │
 │  └──────────────────────────────────────────────────────┘    │
 │                           │                                  │
-│                           ↓                                  │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │  DynamoDB (NoSQL Database)                          │    │
-│  ├──────────────────────────────────────────────────────┤    │
-│  │  Table: messages                                    │    │
-│  │  - messageId (PK)                                   │    │
-│  │  - timestamp (SK)                                   │    │
-│  │  - phoneNumber                                      │    │
-│  │  - content                                          │    │
-│  │  - status (pending, processing, success, error)    │    │
-│  │  - claudeResponse                                   │    │
-│  │  - eventId (FK)                                     │    │
-│  │                                                      │    │
-│  │  Table: events                                      │    │
-│  │  - eventId (PK)                                     │    │
-│  │  - timestamp (SK)                                   │    │
-│  │  - title                                            │    │
-│  │  - startTime                                        │    │
-│  │  - endTime                                          │    │
-│  │  - googleCalendarId                                 │    │
-│  │  - status                                           │    │
-│  │  - messageId (FK)                                   │    │
-│  │                                                      │    │
-│  │  Table: audit_logs                                 │    │
-│  │  - logId (PK)                                       │    │
-│  │  - timestamp (SK)                                   │    │
-│  │  - action                                           │    │
-│  │  - details                                          │    │
-│  └──────────────────────────────────────────────────────┘    │
+│              ┌────────────┴────────────┐                     │
+│              ↓                         ↓                     │
+│  ┌───────────────────────┐  ┌──────────────────────────┐    │
+│  │  OpenAI (Whisper)     │  │  DynamoDB (NoSQL)         │    │
+│  │  transcrição de áudio │  ├──────────────────────────┤    │
+│  └───────────────────────┘  │  Table: messages          │    │
+│                              │  - messageId (PK)         │    │
+│                              │  - timestamp (SK)         │    │
+│                              │  - phoneNumber            │    │
+│                              │  - content                │    │
+│                              │  - status                 │    │
+│                              │  - claudeResponse          │    │
+│                              │  - eventId (FK)            │    │
+│                              │                            │    │
+│                              │  Table: events             │    │
+│                              │  - eventId (PK)            │    │
+│                              │  - timestamp (SK)          │    │
+│                              │  - title, startTime,       │    │
+│                              │    endTime                 │    │
+│                              │  - googleCalendarId        │    │
+│                              │  - status                  │    │
+│                              │  - messageId (FK)          │    │
+│                              │                            │    │
+│                              │  Table: users               │    │
+│                              │  - userId (PK)              │    │
+│                              │  - email (GSI)               │    │
+│                              │  - passwordHash (bcrypt)     │    │
+│                              │  - evolutionInstance          │    │
+│                              │                                │    │
+│                              │  Table: audit_logs             │    │
+│                              │  - logId (PK)                  │    │
+│                              │  - timestamp (SK)              │    │
+│                              │  - action, details              │    │
+│                              └──────────────────────────┘    │
 │                                                                │
 │  ┌──────────────────────────────────────────────────────┐    │
 │  │  CloudWatch (Logs & Monitoring)                     │    │
@@ -86,23 +92,18 @@ Este documento descreve a arquitetura completa do sistema de agendamento via Wha
 │  │  - Performance metrics                              │    │
 │  └──────────────────────────────────────────────────────┘    │
 │                                                                │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │  Secrets Manager (Credenciais seguras)              │    │
-│  │  - Evolution API key                                │    │
-│  │  - Google Calendar credentials                      │    │
-│  │  - Claude API key                                   │    │
-│  └──────────────────────────────────────────────────────┘    │
-│                                                                │
 └────────────────────────────────────────────────────────────────┘
          │
          ↓
 ┌────────────────────────────────────────────────────────────────┐
-│            Frontend (Seu Painel - Fase 2)                     │
+│  Frontend (React + TypeScript + Vite + Tailwind)               │
+│  Deployado: S3 (privado) + CloudFront (HTTPS)                  │
 ├────────────────────────────────────────────────────────────────┤
-│  - React/Next.js                                              │
-│  - Dashboard de mensagens                                     │
-│  - Timeline de eventos                                        │
-│  - Estatísticas                                               │
+│  - Login/registro (JWT)                                        │
+│  - Conectar WhatsApp (QR code)                                 │
+│  - Lista de eventos + visão de calendário mensal                │
+│  - Card de próximo evento em destaque                           │
+│  - i18n EN/PT                                                   │
 └────────────────────────────────────────────────────────────────┘
 ```
 
@@ -121,12 +122,29 @@ User (WhatsApp)
      │
      └─→ Lambda: handleWhatsappWebhook
          │
-         ├─→ Parse JSON
-         ├─→ Validação de schema
+         ├─→ Parse do payload real da Evolution
+         │   ({event, instance, data: {key, message, messageTimestamp}})
+         ├─→ Confere remetente contra AUTHORIZED_PHONE_NUMBER
+         ├─→ Validação de schema (Joi)
          ├─→ Armazena em DynamoDB (messages table)
          │
          └─→ Retorna 200 OK para Evolution
              (confirmação rápida)
+```
+
+### 1.5. Transcrição de Áudio (se a mensagem for um áudio)
+
+```
+Mensagem de voz (body.audio)
+     │
+     ├─→ WhatsAppService.getMediaBase64(key)
+     │   (baixa o áudio via Evolution API)
+     │
+     ├─→ TranscriptionService.transcribeAudio(base64, mimetype)
+     │   (OpenAI Whisper)
+     │
+     └─→ Texto transcrito substitui body.message
+         e segue o fluxo normal (igual mensagem de texto)
 ```
 
 ### 2. Processamento com Claude
@@ -202,13 +220,15 @@ Frontend (Painel)
 
 ### 1. Service Layer Pattern
 
-```javascript
+```typescript
 // Separação de responsabilidades
 services/
-  ├── claude.service.js     // Lógica de integração Claude
-  ├── calendar.service.js   // Lógica de Google Calendar
-  ├── whatsapp.service.js   // Lógica de Evolution API
-  └── dynamodb.service.js   // Lógica de banco de dados
+  ├── claude.service.ts        // Lógica de integração Claude
+  ├── calendar.service.ts      // Lógica de Google Calendar
+  ├── whatsapp.service.ts      // Lógica de Evolution API
+  ├── dynamodb.service.ts      // Lógica de banco de dados
+  ├── auth.service.ts          // JWT + bcrypt
+  └── transcription.service.ts // OpenAI Whisper
 ```
 
 ### 2. Error Handling com Retry
@@ -341,14 +361,17 @@ Logs:
 ### CI/CD
 
 ```
-Push → GitHub Actions
-  ├─→ Lint + Format
-  ├─→ Unit Tests
-  ├─→ Integration Tests
-  ├─→ Build
-  ├─→ Deploy Staging
-  └─→ (Manual) Deploy Produção
+Push/PR → GitHub Actions (.github/workflows/ci.yml)
+  ├─→ backend: testes Jest
+  ├─→ frontend: testes Vitest + build
+  └─→ (só push em main, depois que os dois acima passam)
+      ├─→ deploy-backend: serverless deploy --stage prod
+      └─→ deploy-frontend: build com VITE_API_URL de prod →
+          sync no S3 → invalidação do CloudFront
 ```
+
+Deploy é automático a cada push em `main` — veja a seção "CI/CD" no
+[README](../README.md#-cicd) pra lista de secrets necessários.
 
 ## 📚 Tabelas DynamoDB Detalhadas
 
@@ -401,6 +424,22 @@ Atributos:
     }
 
 GSI: phoneNumber-timestamp (para queries por usuário)
+```
+
+### Tabela: users
+
+```
+Primary Key: userId (HASH)
+
+Atributos:
+  - userId: string (UUID)
+  - email: string
+  - passwordHash: string (bcrypt)
+  - name: string
+  - evolutionInstance: string (nome da instância WhatsApp gerado no registro)
+  - createdAt: number
+
+GSI: email-index (para login por e-mail)
 ```
 
 ### Tabela: audit_logs

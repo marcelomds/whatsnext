@@ -16,19 +16,22 @@ natural.
   <img src="docs/assets/architecture.png" alt="Fluxo da mensagem: WhatsApp para Evolution API para AWS Lambda; áudio é transcrito pelo OpenAI Whisper, texto é enviado pro Claude (Haiku) que extrai o evento, depois Google Calendar e DynamoDB, com a confirmação voltando pro WhatsApp" width="820">
 </p>
 
+<p align="center"><sub>Detalhamento completo (fluxo de dados, schema DynamoDB, escalabilidade): <a href="docs/ARCHITECTURE.md">docs/ARCHITECTURE.md</a></sub></p>
+
 ## ✨ Features
 
 - ✅ Número real de WhatsApp, conectado via QR code direto do painel web (Evolution API)
 - ✅ Só você por design — só mensagens de `AUTHORIZED_PHONE_NUMBER` são processadas; qualquer outra pessoa que mandar mensagem pro número é ignorada em silêncio, sem resposta automática pra estranhos
 - ✅ Mandar mensagem pra si mesmo funciona pra agendar (o padrão "mensagem para você" do WhatsApp é tratado como comando, não como eco)
 - ✅ Mensagem em linguagem natural → Claude extrai título, data, hora e duração
+- ✅ Áudio também funciona — transcrito via OpenAI Whisper antes de chegar no Claude
 - ✅ Evento criado automaticamente no Google Calendar, confirmação enviada de volta no WhatsApp
 - ✅ Mensagens sem relação com agendamento (papo, "oi", dizer o próprio nome) são classificadas como `not_an_event` e não recebem resposta nenhuma — só pede esclarecimento quando você realmente tá tentando agendar algo
 - ✅ Autenticação JWT (registro/login) — cada conta tem sua própria instância WhatsApp
 - ✅ Painel web (React + TypeScript) — tema claro/índigo, alternância de idioma EN/PT, conectar/desconectar WhatsApp, lista de eventos + visão de calendário mensal, card de próximo evento em destaque
 - ✅ Deploy real na AWS — backend em Lambda + API Gateway + DynamoDB, frontend em S3 + CloudFront (HTTPS)
 - ✅ Stack de dev local via Docker Compose (DynamoDB Local + admin UI)
-- ✅ CI em todo push (testes do backend + build do frontend)
+- ✅ CI/CD via GitHub Actions — testes em todo push, deploy automático na AWS a cada push em `main`
 
 ## 🚀 Quick Start (local)
 
@@ -124,6 +127,7 @@ whatsnext/
 | **Banco de dados** | DynamoDB |
 | **Autenticação** | JWT (jsonwebtoken) + bcrypt |
 | **IA** | Claude API (Anthropic) — Haiku por padrão |
+| **Fala pra texto** | OpenAI Whisper — transcreve áudio antes de chegar no Claude |
 | **Calendário** | Google Calendar API (OAuth2) |
 | **WhatsApp** | Evolution API |
 | **Linguagem backend** | Node.js 18 (`serverless-offline` ainda não roda em 20+) |
@@ -150,7 +154,7 @@ whatsnext/
 
 ## 💡 Como Funciona
 
-1. **Mensagem chega no WhatsApp** — *"Segunda 14h reunião com João"*
+1. **Mensagem chega no WhatsApp** — *"Segunda 14h reunião com João"* (ou um áudio dizendo a mesma coisa — é transcrito via OpenAI Whisper primeiro, depois tratado igual a texto)
 2. **Evolution API chama o webhook** com o formato real do payload (`{event, instance, data: {key, message, messageTimestamp}}`). O endereçamento `@lid` (privacidade) mais novo do WhatsApp é resolvido de volta pro número via `remoteJidAlt`; mensagens de grupo são descartadas; só o *eco* da nossa própria confirmação é filtrado (comparando o ID da mensagem), então uma mensagem mandada pra si mesmo continua sendo tratada como comando real
 3. **Remetente é conferido contra `AUTHORIZED_PHONE_NUMBER`** — qualquer outro número é ignorado em silêncio (200 OK, sem resposta, nada é salvo)
 4. **Lambda armazena a mensagem** no DynamoDB, depois manda o texto (junto com histórico recente) pro Claude
@@ -235,6 +239,7 @@ cd apps/frontend && npm run build   # type-check + build do frontend
 - [x] Autorização só-você (`AUTHORIZED_PHONE_NUMBER`) + silêncio pra mensagens sem relação
 - [x] Painel web EN/PT com visão de calendário + destaque do próximo evento
 - [x] Transcrição de mensagens de áudio
+- [x] CD — deploy automático na AWS a cada push em `main`
 
 ## 🐛 Troubleshooting
 

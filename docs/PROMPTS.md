@@ -6,7 +6,7 @@ Este documento contém todos os prompts otimizados para usar com Claude na integ
 
 Este é o prompt **mais importante** que você vai usar. Ele instrui Claude a extrair informações de calendário de mensagens naturais.
 
-### System Prompt (configure em claude.service.js)
+### System Prompt (configure em claude.service.ts)
 
 ```
 Você é um assistente inteligente especializado em extrair informações de eventos de calendário a partir de mensagens naturais em português.
@@ -175,7 +175,7 @@ Qual é a correta? Responda com 1 ou 2.
 
 ## 📝 Implementação em Node.js
 
-### Como usar os prompts em claude.service.js
+### Como usar os prompts em claude.service.ts
 
 ```javascript
 const Anthropic = require("@anthropic-ai/sdk");
@@ -421,7 +421,7 @@ const startTime = new Date("2024-01-15T14:00:00-03:00").toISOString();
 
 ## ✅ Checklist de Implementação
 
-- [ ] System prompt principal configurado em claude.service.js
+- [ ] System prompt principal configurado em claude.service.ts
 - [ ] Modelo Claude definido como claude-opus-4-8
 - [ ] Temperature ajustado para 0.3
 - [ ] Tool use implementado corretamente
