@@ -265,12 +265,18 @@ logger.info('event_created', {
 
 ### Autenticação & Autorização
 
-| Serviço | Método | Armazenamento |
+| Serviço | Método | Armazenamento (real, hoje) |
 |---------|--------|---------------|
-| **Evolution API** | API Key | AWS Secrets Manager |
-| **Google Calendar** | OAuth2 (JWT) | Token armazenado seguro |
-| **Claude API** | API Key | AWS Secrets Manager |
-| **API Gateway** | API Key (opcional) | IAM Roles |
+| **Evolution API** | API Key | Variável de ambiente da Lambda (`serverless.yml` → `${env:X}`) |
+| **Google Calendar** | OAuth2 (refresh token) | Variável de ambiente da Lambda |
+| **Claude API** | API Key | Variável de ambiente da Lambda |
+| **OpenAI (Whisper)** | API Key | Variável de ambiente da Lambda |
+
+AWS Secrets Manager: as IAM roles têm permissão `secretsmanager:GetSecretValue`
+(ver `serverless.yml`), mas nenhum serviço lê de lá hoje — é capacidade
+disponível, não usada em runtime. As variáveis de ambiente em si só existem
+fora do código local (`.env.production`, nunca commitado) e nos GitHub
+Secrets usados pelo deploy automático.
 
 ### Validação de Dados
 
@@ -285,14 +291,11 @@ const messageSchema = {
 
 ### Rate Limiting
 
-```javascript
-// Por telefone: máximo 10 mensagens/minuto
-const rateLimiter = new RateLimiter({
-  windowMs: 60000,
-  maxRequests: 10,
-  keyGenerator: (event) => event.from
-});
-```
+Pendente — `RATE_LIMIT_WINDOW_MS` e `RATE_LIMIT_MAX_REQUESTS` existem no
+`.env.example` e `RateLimitError` existe em `error-handler.ts`, mas nada no
+código hoje lê essas variáveis ou aplica um limite de fato. Não tem
+enforcement — qualquer freio de abuso hoje vem só de `AUTHORIZED_PHONE_NUMBER`
+(ignora silenciosamente quem não é o dono do número).
 
 ## 📈 Escalabilidade
 
@@ -334,16 +337,20 @@ const rateLimiter = new RateLimiter({
 
 ## 💾 Backup & Disaster Recovery
 
+Estado atual (`apps/backend/serverless.yml`):
+
 ```
 DynamoDB:
-  - Point-in-time recovery (PITR) habilitado
-  - Backup diário automatizado
-  - Replicação cross-region (opcional)
+  - TTL habilitado em messages (90 dias) e audit_logs (30 dias)
+  - PITR: não configurado (não tem PointInTimeRecoverySpecification)
+  - Backup automatizado / replicação cross-region: não configurado
 
 Logs:
-  - CloudWatch logs com 30 dias de retenção
-  - Export semanal para S3
+  - CloudWatch logs sem retenção configurada (fica "never expire" por padrão)
 ```
+
+Pendências reais, não implementadas ainda: `PointInTimeRecoverySpecification`
+nas tabelas e `provider.logRetentionInDays` no `serverless.yml`.
 
 ## 🚀 Deployment
 
